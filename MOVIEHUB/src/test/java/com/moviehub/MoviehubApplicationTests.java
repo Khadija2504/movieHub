@@ -1,4 +1,4 @@
-package CINEMA.MOVIEHUB;
+package com.moviehub;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

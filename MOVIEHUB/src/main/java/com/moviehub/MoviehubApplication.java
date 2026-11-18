@@ -1,9 +1,11 @@
-package CINEMA.MOVIEHUB;
+package com.moviehub;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class MoviehubApplication {
 
 	public static void main(String[] args) {

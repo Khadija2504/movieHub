@@ -1,3 +1,89 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+ * MovieHub design tokens (dark cinema theme).
+ * Each --color-* token becomes a Tailwind utility: bg-surface, text-muted, border-border, ...
+ * ------------------------------------------------------------------ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #0b0b10;
+  --color-surface: #14141c;
+  --color-surface-raised: #1c1c27;
+  --color-border: #2a2a38;
+  --color-foreground: #f4f4f6;
+  --color-muted: #9b9bab;
+
+  --color-primary: #e3424f;
+  --color-primary-hover: #f05663;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #f2b544;
+
+  --color-success: #3ccf8e;
+  --color-warning: #f2b544;
+  --color-danger: #ef4444;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased min-h-dvh;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Reusable component classes
+ * ------------------------------------------------------------------ */
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold
+      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-hover;
+  }
+  .btn-secondary {
+    @apply border border-border bg-surface-raised text-foreground hover:border-muted;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-surface-raised hover:text-foreground;
+  }
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .card {
+    @apply rounded-[var(--radius-card)] border border-border bg-surface;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground
+      placeholder:text-muted focus:border-primary focus:outline-none;
+  }
+
+  .label {
+    @apply mb-1 block text-sm font-medium text-foreground;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
