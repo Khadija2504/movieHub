@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,9 +26,14 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler({ResourceNotFoundException.class, NoResourceFoundException.class})
-    ResponseEntity<ApiError> handleNotFound(Exception ex, HttpServletRequest req) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex, HttpServletRequest req) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ApiError> handleNoEndpoint(NoResourceFoundException ex, HttpServletRequest req) {
+        return build(HttpStatus.NOT_FOUND, "Endpoint not found", req);
     }
 
     @ExceptionHandler({BadRequestException.class, MethodArgumentTypeMismatchException.class})
@@ -55,9 +62,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 
+    @ExceptionHandler(BadCredentialsException.class)
+    ResponseEntity<ApiError> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
+        // Spring's default message is "Bad credentials"; keep our own message when we threw it ourselves.
+        String message = "Bad credentials".equals(ex.getMessage()) ? "Invalid email or password" : ex.getMessage();
+        return build(HttpStatus.UNAUTHORIZED, message, req);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    ResponseEntity<ApiError> handleDisabled(DisabledException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, "This account has been suspended", req);
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex, HttpServletRequest req) {
-        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), req);
+        return build(HttpStatus.UNAUTHORIZED, "Authentication failed", req);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
