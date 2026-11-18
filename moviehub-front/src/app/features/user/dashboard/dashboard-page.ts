@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-dashboard-page',
   template: `
-    <h1 class="text-2xl font-bold">My Dashboard</h1>
+    <h1 class="text-2xl font-bold">Welcome back, {{ auth.user()?.firstName }}</h1>
     <p class="mt-1 text-muted">Your watchlist, continue watching and upcoming bookings will appear here.</p>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-3">
@@ -17,6 +19,8 @@ import { Component } from '@angular/core';
   `,
 })
 export class DashboardPage {
+  protected readonly auth = inject(AuthService);
+
   protected readonly stats = [
     { label: 'Watchlist' },
     { label: 'Library' },

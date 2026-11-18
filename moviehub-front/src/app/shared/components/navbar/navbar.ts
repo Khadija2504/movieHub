@@ -1,7 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { Logo } from '../logo/logo';
+import { UserMenu } from '../user-menu/user-menu';
 
 interface NavLink {
   label: string;
@@ -10,10 +12,11 @@ interface NavLink {
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive, Logo],
+  imports: [RouterLink, RouterLinkActive, Logo, UserMenu],
   templateUrl: './navbar.html',
 })
 export class Navbar {
+  protected readonly auth = inject(AuthService);
   protected readonly menuOpen = signal(false);
 
   protected readonly links: NavLink[] = [
@@ -30,5 +33,10 @@ export class Navbar {
 
   protected closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  protected logout(): void {
+    this.closeMenu();
+    this.auth.logout();
   }
 }
