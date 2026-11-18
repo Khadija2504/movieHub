@@ -1,0 +1,57 @@
+<!-- Hero -->
+<section class="relative overflow-hidden border-b border-border">
+  <div
+    class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(227,66,79,0.25),transparent_55%)]"
+    aria-hidden="true"
+  ></div>
+  <div class="container-page relative py-20 sm:py-28">
+    <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-accent">Stream · Rent · Book</p>
+    <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">
+      Your movies, at home <span class="text-primary">and</span> on the big screen.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-muted">
+      Discover trending movies and series, watch them online, or book the best seats at a cinema near
+      you, all in one place.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a routerLink="/movies" class="btn btn-primary btn-lg">Browse movies</a>
+      <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="container-page py-14">
+  <div class="grid gap-4 sm:grid-cols-3">
+    @for (feature of features; track feature.title) {
+      <article class="card p-6">
+        <div class="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary" aria-hidden="true">
+          {{ feature.icon }}
+        </div>
+        <h2 class="text-lg font-semibold">{{ feature.title }}</h2>
+        <p class="mt-1 text-sm text-muted">{{ feature.text }}</p>
+      </article>
+    }
+  </div>
+</section>
+
+<!-- Dev-only: backend connectivity (remove in Phase 2) -->
+<section class="container-page">
+  <div class="card flex flex-wrap items-center gap-3 p-4 text-sm">
+    <span class="font-medium">Backend status</span>
+    @switch (health()?.status) {
+      @case ('UP') {
+        <span class="badge bg-success/15 text-success">API UP · DB {{ health()?.database }}</span>
+      }
+      @case ('DEGRADED') {
+        <span class="badge bg-warning/15 text-warning">API UP · DB DOWN</span>
+      }
+      @case ('DOWN') {
+        <span class="badge bg-danger/15 text-danger">API unreachable</span>
+      }
+      @default {
+        <span class="badge bg-surface-raised text-muted">Checking…</span>
+      }
+    }
+  </div>
+</section>
