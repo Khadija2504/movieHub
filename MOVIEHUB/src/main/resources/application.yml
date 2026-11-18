@@ -2,6 +2,12 @@ spring:
   application:
     name: moviehub
 
+  # Load the root .env file (works whether the app is started from the repo root or from MOVIEHUB/).
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+
   # Values come from environment variables; the defaults match docker-compose.yml (db on host port 5433).
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5433/movie_hub}
@@ -37,6 +43,13 @@ app:
     api-key: ${TMDB_API_KEY:}
     base-url: https://api.themoviedb.org/3
     image-base-url: https://image.tmdb.org/t/p
+  jwt:
+    secret: ${JWT_SECRET:}
+    access-token-ttl: 15m
+    refresh-token-ttl: 7d
+  admin:
+    email: ${ADMIN_EMAIL:admin@moviehub.dev}
+    password: ${ADMIN_PASSWORD:}
 
 springdoc:
   swagger-ui:
