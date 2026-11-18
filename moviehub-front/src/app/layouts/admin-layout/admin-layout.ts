@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { Logo } from '../../shared/components/logo/logo';
 import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar';
 
@@ -37,7 +38,11 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
             </svg>
           </button>
           <h1 class="text-lg font-semibold">Administration</h1>
-          <a routerLink="/" class="btn btn-secondary">Back to site</a>
+          <div class="flex items-center gap-2">
+            <span class="hidden text-sm text-muted sm:inline">{{ auth.user()?.email }}</span>
+            <a routerLink="/" class="btn btn-secondary">Back to site</a>
+            <button type="button" class="btn btn-ghost" (click)="auth.logout()">Log out</button>
+          </div>
         </header>
         <main class="flex-1 p-4 sm:p-6">
           <router-outlet />
@@ -47,6 +52,7 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
   `,
 })
 export class AdminLayout {
+  protected readonly auth = inject(AuthService);
   protected readonly sidebarOpen = signal(false);
 
   protected readonly sections: SidebarSection[] = [

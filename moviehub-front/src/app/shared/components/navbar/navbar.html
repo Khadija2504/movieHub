@@ -23,8 +23,12 @@
           <path d="m20 20-3.5-3.5" />
         </svg>
       </a>
-      <a routerLink="/login" class="btn btn-ghost">Log in</a>
-      <a routerLink="/register" class="btn btn-primary">Sign up</a>
+      @if (auth.isAuthenticated()) {
+        <app-user-menu />
+      } @else {
+        <a routerLink="/login" class="btn btn-ghost">Log in</a>
+        <a routerLink="/register" class="btn btn-primary">Sign up</a>
+      }
     </div>
 
     <button
@@ -58,10 +62,31 @@
             >
           </li>
         }
-        <li class="mt-2 flex gap-2">
-          <a routerLink="/login" (click)="closeMenu()" class="btn btn-secondary flex-1">Log in</a>
-          <a routerLink="/register" (click)="closeMenu()" class="btn btn-primary flex-1">Sign up</a>
-        </li>
+        @if (auth.user(); as user) {
+          <li class="mt-2 border-t border-border pt-3">
+            <p class="px-3 text-sm font-medium">{{ user.firstName }} {{ user.lastName }}</p>
+            <p class="px-3 text-xs text-muted">{{ user.email }}</p>
+          </li>
+          <li>
+            <a routerLink="/account" (click)="closeMenu()"
+              class="block rounded-lg px-3 py-2 text-muted hover:bg-surface-raised hover:text-foreground">My account</a>
+          </li>
+          @if (auth.isAdmin()) {
+            <li>
+              <a routerLink="/admin" (click)="closeMenu()"
+                class="block rounded-lg px-3 py-2 text-accent hover:bg-surface-raised">Admin panel</a>
+            </li>
+          }
+          <li>
+            <button type="button" (click)="logout()"
+              class="block w-full rounded-lg px-3 py-2 text-left text-danger hover:bg-surface-raised">Log out</button>
+          </li>
+        } @else {
+          <li class="mt-2 flex gap-2">
+            <a routerLink="/login" (click)="closeMenu()" class="btn btn-secondary flex-1">Log in</a>
+            <a routerLink="/register" (click)="closeMenu()" class="btn btn-primary flex-1">Sign up</a>
+          </li>
+        }
       </ul>
     </div>
   }
