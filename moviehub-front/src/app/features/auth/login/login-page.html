@@ -1,0 +1,71 @@
+<section class="container-page grid place-items-center py-16">
+  <div class="card w-full max-w-md p-8">
+    <h1 class="text-2xl font-bold">Welcome back</h1>
+    <p class="mt-1 text-sm text-muted">Log in to continue to MovieHub.</p>
+
+    @if (serverError(); as message) {
+      <div class="mt-6 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
+        {{ message }}
+      </div>
+    }
+
+    <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div>
+        <label class="label" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          class="input"
+          formControlName="email"
+          autocomplete="email"
+          [class.border-danger]="invalid('email')"
+          [attr.aria-invalid]="invalid('email')"
+        />
+        @if (invalid('email')) {
+          <p class="mt-1 text-xs text-danger">
+            {{ form.controls.email.hasError('required') ? 'Email is required' : 'Enter a valid email' }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="password">Password</label>
+        <div class="relative">
+          <input
+            id="password"
+            class="input pr-16"
+            formControlName="password"
+            autocomplete="current-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            [class.border-danger]="invalid('password')"
+            [attr.aria-invalid]="invalid('password')"
+          />
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 px-3 text-xs font-medium text-muted hover:text-foreground"
+            (click)="showPassword.set(!showPassword())"
+          >
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        @if (invalid('password')) {
+          <p class="mt-1 text-xs text-danger">Password is required</p>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" [disabled]="submitting()">
+        {{ submitting() ? 'Logging in…' : 'Log in' }}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-muted">
+      New to MovieHub?
+      <a
+        routerLink="/register"
+        [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}"
+        class="font-medium text-primary hover:underline"
+        >Create an account</a
+      >
+    </p>
+  </div>
+</section>

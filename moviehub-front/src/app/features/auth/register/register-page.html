@@ -1,0 +1,73 @@
+<section class="container-page grid place-items-center py-16">
+  <div class="card w-full max-w-lg p-8">
+    <h1 class="text-2xl font-bold">Create your account</h1>
+    <p class="mt-1 text-sm text-muted">Build your watchlist, rent movies and book cinema seats.</p>
+
+    @if (serverError(); as message) {
+      <div class="mt-6 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
+        {{ message }}
+      </div>
+    }
+
+    <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="firstName">First name</label>
+          <input id="firstName" class="input" formControlName="firstName" autocomplete="given-name"
+            [class.border-danger]="error('firstName')" [attr.aria-invalid]="!!error('firstName')" />
+          @if (error('firstName'); as msg) {
+            <p class="mt-1 text-xs text-danger">{{ msg }}</p>
+          }
+        </div>
+        <div>
+          <label class="label" for="lastName">Last name</label>
+          <input id="lastName" class="input" formControlName="lastName" autocomplete="family-name"
+            [class.border-danger]="error('lastName')" [attr.aria-invalid]="!!error('lastName')" />
+          @if (error('lastName'); as msg) {
+            <p class="mt-1 text-xs text-danger">{{ msg }}</p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label class="label" for="email">Email</label>
+        <input id="email" type="email" class="input" formControlName="email" autocomplete="email"
+          [class.border-danger]="error('email')" [attr.aria-invalid]="!!error('email')" />
+        @if (error('email'); as msg) {
+          <p class="mt-1 text-xs text-danger">{{ msg }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="password">Password</label>
+        <input id="password" type="password" class="input" formControlName="password" autocomplete="new-password"
+          [class.border-danger]="error('password')" [attr.aria-invalid]="!!error('password')" />
+        @if (error('password'); as msg) {
+          <p class="mt-1 text-xs text-danger">{{ msg }}</p>
+        } @else {
+          <p class="mt-1 text-xs text-muted">At least 8 characters, with a letter and a digit.</p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="confirmPassword">Confirm password</label>
+        <input id="confirmPassword" type="password" class="input" formControlName="confirmPassword"
+          autocomplete="new-password" [class.border-danger]="error('confirmPassword')"
+          [attr.aria-invalid]="!!error('confirmPassword')" />
+        @if (error('confirmPassword'); as msg) {
+          <p class="mt-1 text-xs text-danger">{{ msg }}</p>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" [disabled]="submitting()">
+        {{ submitting() ? 'Creating account…' : 'Create account' }}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-muted">
+      Already have an account?
+      <a routerLink="/login" [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}"
+        class="font-medium text-primary hover:underline">Log in</a>
+    </p>
+  </div>
+</section>
