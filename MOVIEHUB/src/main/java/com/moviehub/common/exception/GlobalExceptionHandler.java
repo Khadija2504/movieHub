@@ -13,7 +13,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -41,6 +44,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
     }
 
+    @ExceptionHandler({MissingServletRequestParameterException.class, HandlerMethodValidationException.class})
+    ResponseEntity<ApiError> handleInvalidParameters(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid request parameters", req);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ApiError> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), req);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, "Malformed request body", req);
@@ -49,6 +62,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ResponseEntity<ApiError> handleConflict(ConflictException ex, HttpServletRequest req) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    ResponseEntity<ApiError> handleExternal(ExternalServiceException ex, HttpServletRequest req) {
+        log.warn("External service error on {}: {}", req.getRequestURI(), ex.getMessage());
+        HttpStatus status = ex.isUnavailable() ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.BAD_GATEWAY;
+        return build(status, ex.getMessage(), req);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
