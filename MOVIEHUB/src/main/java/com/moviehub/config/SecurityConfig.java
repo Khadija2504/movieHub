@@ -28,6 +28,7 @@ import com.moviehub.security.RestSecurityErrorHandler;
  * Stateless JWT security.
  * <ul>
  *   <li>/api/auth/** and documentation: public</li>
+ *   <li>catalog GET endpoints (movies, series, trending, search, genres): public</li>
  *   <li>/api/admin/**: ADMIN role</li>
  *   <li>everything else: any authenticated user (public catalog GETs are opened in Phase 2)</li>
  * </ul>
@@ -45,6 +46,15 @@ public class SecurityConfig {
             "/error"
     };
 
+    /** Read-only catalog endpoints anyone can call (GET only). */
+    private static final String[] PUBLIC_GET_ENDPOINTS = {
+            "/api/movies/**",
+            "/api/series/**",
+            "/api/trending",
+            "/api/search",
+            "/api/genres"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
             RestSecurityErrorHandler errorHandler) throws Exception {
@@ -58,6 +68,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
