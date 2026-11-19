@@ -71,7 +71,7 @@
   }
 
   .card {
-    @apply rounded-[var(--radius-card)] border border-border bg-surface;
+    @apply rounded-card border border-border bg-surface;
   }
 
   .input {
