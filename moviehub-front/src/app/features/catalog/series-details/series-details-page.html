@@ -1,0 +1,123 @@
+@if (state().error; as error) {
+  <div class="container-page py-16"><app-error-state [message]="error" (retry)="retry()" /></div>
+} @else if (state().loading) {
+  <app-details-skeleton />
+} @else if (state().data; as series) {
+  <app-title-hero
+    kind="TV Series"
+    [title]="series.title"
+    [year]="series.year"
+    [posterUrl]="series.posterUrl"
+    [backdropUrl]="series.backdropUrl"
+    [rating]="series.rating"
+    [voteCount]="series.voteCount"
+    [facts]="facts()"
+    [genres]="series.genres"
+    [tagline]="series.tagline"
+    [overview]="series.overview"
+    [hasTrailer]="!!series.trailer"
+    (playTrailer)="trailerOpen.set(true)"
+  >
+    @if (series.offer.inCatalog && series.offer.streamable) {
+      <button type="button" class="btn btn-primary" disabled title="Streaming arrives in a later update">▶ Watch now</button>
+      <span class="text-xs text-muted">Included with a subscription</span>
+    } @else {
+      <span class="badge border border-border bg-surface/70 py-1.5 text-muted">Not available on MovieHub yet</span>
+    }
+  </app-title-hero>
+
+  <div class="container-page">
+    @if (series.creators.length) {
+      <p class="pt-6 text-sm text-muted">
+        Created by
+        <span class="font-medium text-foreground">{{ series.creators.map((c) => c.name).join(', ') }}</span>
+      </p>
+    }
+
+    <!-- Seasons & episodes -->
+    @if (series.seasons.length) {
+      <section class="py-6" aria-labelledby="seasons-heading">
+        <h2 id="seasons-heading" class="mb-4 text-xl font-bold sm:text-2xl">Episodes</h2>
+
+        <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0" role="tablist">
+          @for (s of series.seasons; track s.seasonNumber) {
+            <button
+              type="button"
+              role="tab"
+              class="btn shrink-0"
+              [class.btn-primary]="s.seasonNumber === selectedSeason()"
+              [class.btn-secondary]="s.seasonNumber !== selectedSeason()"
+              [attr.aria-selected]="s.seasonNumber === selectedSeason()"
+              (click)="selectSeason(s.seasonNumber)"
+            >
+              {{ s.name }}
+              @if (s.episodeCount) {
+                <span class="opacity-70">· {{ s.episodeCount }}</span>
+              }
+            </button>
+          }
+        </div>
+
+        <div class="mt-4" role="tabpanel">
+          @if (season().error; as error) {
+            <app-error-state [message]="error" (retry)="retrySeason()" compact />
+          } @else if (season().loading) {
+            <ul class="space-y-3">
+              @for (i of [1, 2, 3]; track i) {
+                <li class="card flex h-24 animate-pulse gap-4 p-3" aria-hidden="true">
+                  <div class="aspect-video h-full rounded-lg bg-surface-raised"></div>
+                  <div class="flex-1 space-y-2 py-1">
+                    <div class="h-4 w-1/3 rounded bg-surface-raised"></div>
+                    <div class="h-3 w-2/3 rounded bg-surface-raised"></div>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else if (season().data; as s) {
+            @if (s.overview) {
+              <p class="mb-4 max-w-3xl text-sm text-muted">{{ s.overview }}</p>
+            }
+            <ol class="space-y-3">
+              @for (ep of s.episodes; track ep.episodeNumber) {
+                <li class="card flex flex-col gap-4 p-3 sm:flex-row">
+                  <div class="aspect-video w-full shrink-0 overflow-hidden rounded-lg bg-surface-raised sm:w-48">
+                    @if (ep.stillUrl) {
+                      <img [src]="ep.stillUrl" alt="" loading="lazy" class="h-full w-full object-cover" />
+                    }
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="font-medium">
+                      <span class="text-muted">{{ ep.episodeNumber }}.</span> {{ ep.name }}
+                    </p>
+                    <p class="mt-0.5 text-xs text-muted">
+                      @if (ep.airDate) {
+                        {{ ep.airDate }}
+                      }
+                      @if (ep.runtime) {
+                        · {{ ep.runtime | runtime }}
+                      }
+                    </p>
+                    @if (ep.overview) {
+                      <p class="mt-2 line-clamp-3 text-sm text-muted">{{ ep.overview }}</p>
+                    }
+                  </div>
+                </li>
+              } @empty {
+                <li class="text-sm text-muted">No episode information yet.</li>
+              }
+            </ol>
+          }
+        </div>
+      </section>
+    }
+
+    <app-cast-row [people]="series.cast" />
+    @if (series.recommendations.length) {
+      <app-media-carousel heading="You may also like" [items]="series.recommendations" />
+    }
+  </div>
+
+  @if (trailerOpen() && series.trailer) {
+    <app-trailer-modal [videoKey]="series.trailer.key" [title]="series.trailer.name" (closed)="trailerOpen.set(false)" />
+  }
+}

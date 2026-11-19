@@ -1,57 +1,97 @@
-<!-- Hero -->
-<section class="relative overflow-hidden border-b border-border">
+<!-- Hero: featured trending title -->
+<section class="relative isolate overflow-hidden border-b border-border">
+  @if (featured(); as item) {
+    <img
+      [src]="item.backdropUrl"
+      alt=""
+      class="absolute inset-0 -z-10 h-full w-full object-cover opacity-50"
+      fetchpriority="high"
+    />
+  }
   <div
-    class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(227,66,79,0.25),transparent_55%)]"
+    class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/70 to-background/20"
     aria-hidden="true"
   ></div>
-  <div class="container-page relative py-20 sm:py-28">
-    <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-accent">Stream · Rent · Book</p>
-    <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">
-      Your movies, at home <span class="text-primary">and</span> on the big screen.
-    </h1>
-    <p class="mt-6 max-w-2xl text-lg text-muted">
-      Discover trending movies and series, watch them online, or book the best seats at a cinema near
-      you, all in one place.
-    </p>
-    <div class="mt-8 flex flex-wrap gap-3">
-      <a routerLink="/movies" class="btn btn-primary btn-lg">Browse movies</a>
-      <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
-    </div>
-  </div>
-</section>
+  <div
+    class="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/40 to-transparent"
+    aria-hidden="true"
+  ></div>
 
-<!-- Features -->
-<section class="container-page py-14">
-  <div class="grid gap-4 sm:grid-cols-3">
-    @for (feature of features; track feature.title) {
-      <article class="card p-6">
-        <div class="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary" aria-hidden="true">
-          {{ feature.icon }}
-        </div>
-        <h2 class="text-lg font-semibold">{{ feature.title }}</h2>
-        <p class="mt-1 text-sm text-muted">{{ feature.text }}</p>
-      </article>
+  <div class="container-page py-20 sm:py-28 lg:py-36">
+    @if (featured(); as item) {
+      <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
+        Trending this week · {{ item.mediaType === 'MOVIE' ? 'Movie' : 'Series' }}
+      </p>
+      <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">{{ item.title }}</h1>
+      <p class="mt-5 line-clamp-3 max-w-2xl text-base text-muted sm:text-lg">{{ item.overview }}</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a [routerLink]="[item.mediaType === 'MOVIE' ? '/movies' : '/series', item.id]" class="btn btn-primary btn-lg">
+          More info
+        </a>
+        <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+      </div>
+    } @else if (trending.state().loading) {
+      <div class="animate-pulse space-y-5" aria-hidden="true">
+        <div class="h-4 w-48 rounded bg-surface-raised"></div>
+        <div class="h-14 w-full max-w-2xl rounded bg-surface-raised"></div>
+        <div class="h-20 w-full max-w-xl rounded bg-surface-raised"></div>
+      </div>
+    } @else {
+      <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-accent">Stream · Rent · Book</p>
+      <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">
+        Your movies, at home <span class="text-primary">and</span> on the big screen.
+      </h1>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a routerLink="/movies" class="btn btn-primary btn-lg">Browse movies</a>
+        <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+      </div>
     }
   </div>
 </section>
 
-<!-- Dev-only: backend connectivity (remove in Phase 2) -->
-<section class="container-page">
-  <div class="card flex flex-wrap items-center gap-3 p-4 text-sm">
-    <span class="font-medium">Backend status</span>
-    @switch (health()?.status) {
-      @case ('UP') {
-        <span class="badge bg-success/15 text-success">API UP · DB {{ health()?.database }}</span>
-      }
-      @case ('DEGRADED') {
-        <span class="badge bg-warning/15 text-warning">API UP · DB DOWN</span>
-      }
-      @case ('DOWN') {
-        <span class="badge bg-danger/15 text-danger">API unreachable</span>
-      }
-      @default {
-        <span class="badge bg-surface-raised text-muted">Checking…</span>
-      }
-    }
-  </div>
-</section>
+<div class="container-page">
+  <app-media-carousel
+    heading="Trending this week"
+    [items]="trending.state().data ?? []"
+    [loading]="trending.state().loading"
+    [error]="trending.state().error"
+    (retry)="trending.retry()"
+    showType
+  />
+
+  <app-media-carousel
+    heading="Popular movies"
+    [items]="popularMovies.state().data ?? []"
+    [loading]="popularMovies.state().loading"
+    [error]="popularMovies.state().error"
+    (retry)="popularMovies.retry()"
+    viewAllLink="/movies"
+  />
+
+  <app-media-carousel
+    heading="Popular TV series"
+    [items]="popularSeries.state().data ?? []"
+    [loading]="popularSeries.state().loading"
+    [error]="popularSeries.state().error"
+    (retry)="popularSeries.retry()"
+    viewAllLink="/series"
+  />
+
+  <!-- Cinema promo -->
+  <section class="my-8 overflow-hidden rounded-card border border-border bg-gradient-to-br from-primary/25 via-surface to-surface p-8 sm:p-12">
+    <p class="text-sm font-semibold uppercase tracking-widest text-accent">On the big screen</p>
+    <h2 class="mt-2 max-w-xl text-2xl font-bold sm:text-3xl">Pick your seat, pay online, show your QR code.</h2>
+    <p class="mt-2 max-w-xl text-muted">Book tickets at cinemas near you in a few clicks.</p>
+    <a routerLink="/cinemas" class="btn btn-primary mt-6">Browse cinemas</a>
+  </section>
+
+  <app-media-carousel
+    heading="Top rated movies"
+    [items]="topRatedMovies.state().data ?? []"
+    [loading]="topRatedMovies.state().loading"
+    [error]="topRatedMovies.state().error"
+    (retry)="topRatedMovies.retry()"
+    viewAllLink="/movies"
+    [viewAllParams]="{ sort: 'TOP_RATED' }"
+  />
+</div>

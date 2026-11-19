@@ -14,7 +14,11 @@ public record AppProperties(Cors cors, Tmdb tmdb, Jwt jwt, Admin admin) {
     public record Cors(List<String> allowedOrigins) {
     }
 
-    public record Tmdb(String apiKey, String baseUrl, String imageBaseUrl) {
+    /**
+     * @param apiKey either a v3 "API Key" (sent as ?api_key=) or a v4 "API Read Access Token" (sent as Bearer header)
+     */
+    public record Tmdb(String apiKey, String baseUrl, String imageBaseUrl, String language,
+            Duration connectTimeout, Duration readTimeout) {
     }
 
     public record Jwt(String secret, Duration accessTokenTtl, Duration refreshTokenTtl) {
