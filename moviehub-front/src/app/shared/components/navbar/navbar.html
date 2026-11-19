@@ -17,12 +17,20 @@
     </ul>
 
     <div class="hidden items-center gap-2 md:flex">
-      <a routerLink="/search" class="btn btn-ghost" aria-label="Search">
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <form role="search" class="relative" (submit)="search($event, searchBox.value); searchBox.value = ''">
+        <input
+          #searchBox
+          type="search"
+          name="q"
+          class="input w-44 py-1.5 pl-9 lg:w-56"
+          placeholder="Search titles…"
+          aria-label="Search movies and TV series"
+        />
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
-      </a>
+      </form>
       @if (auth.isAuthenticated()) {
         <app-user-menu />
       } @else {
@@ -52,6 +60,12 @@
   @if (menuOpen()) {
     <div id="mobile-menu" class="border-t border-border md:hidden">
       <ul class="container-page flex flex-col gap-1 py-3">
+        <li class="mb-2">
+          <form role="search" (submit)="search($event, mobileSearch.value); closeMenu()">
+            <input #mobileSearch type="search" name="q" class="input" placeholder="Search movies and TV series…"
+              aria-label="Search movies and TV series" />
+          </form>
+        </li>
         @for (link of links; track link.path) {
           <li>
             <a

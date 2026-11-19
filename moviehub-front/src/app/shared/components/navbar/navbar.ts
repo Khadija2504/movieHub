@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { Logo } from '../logo/logo';
@@ -17,6 +17,7 @@ interface NavLink {
 })
 export class Navbar {
   protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   protected readonly menuOpen = signal(false);
 
   protected readonly links: NavLink[] = [
@@ -33,6 +34,14 @@ export class Navbar {
 
   protected closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  protected search(event: Event, query: string): void {
+    event.preventDefault();
+    const q = query.trim();
+    if (q) {
+      void this.router.navigate(['/search'], { queryParams: { q } });
+    }
   }
 
   protected logout(): void {
