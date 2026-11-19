@@ -1,33 +1,40 @@
-import { Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { Observable, map, switchMap } from 'rxjs';
 
-import { HealthService } from '../../../core/services/health.service';
+import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
+import { MediaSummary } from '../../../core/models/catalog';
+import { CatalogService } from '../../../core/services/catalog.service';
+import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
 
 @Component({
   selector: 'app-home-page',
-  imports: [RouterLink],
+  imports: [RouterLink, MediaCarousel],
   templateUrl: './home-page.html',
 })
 export class HomePage {
-  /** Temporary backend connectivity check (replaced by real content in Phase 2). */
-  protected readonly health = toSignal(inject(HealthService).check());
+  private readonly catalog = inject(CatalogService);
 
-  protected readonly features = [
-    {
-      title: 'Stream',
-      text: 'Watch movies and series included in your plan, anytime.',
-      icon: '▶',
-    },
-    {
-      title: 'Buy or rent',
-      text: 'Own your favourites or rent them for 48 hours.',
-      icon: '◆',
-    },
-    {
-      title: 'Book a seat',
-      text: 'Pick your cinema, choose your seat and get a QR ticket.',
-      icon: '◉',
-    },
-  ];
+  protected readonly trending = this.row(() => this.catalog.trending());
+  protected readonly popularMovies = this.row(() => this.catalog.browse('MOVIE', { sort: 'POPULAR' }));
+  protected readonly popularSeries = this.row(() => this.catalog.browse('SERIES', { sort: 'POPULAR' }));
+  protected readonly topRatedMovies = this.row(() => this.catalog.browse('MOVIE', { sort: 'TOP_RATED' }));
+
+  /** Hero: the first trending title that has a backdrop image. */
+  protected readonly featured = computed(
+    () => this.trending.state().data?.find((item) => item.backdropUrl) ?? null,
+  );
+
+  /** One independently loading (and retryable) carousel row. */
+  private row(request: () => Observable<{ content: MediaSummary[] }>) {
+    const attempt = signal(0);
+    const state = toSignal(
+      toObservable(attempt).pipe(
+        switchMap(() => request().pipe(map((page) => page.content), toLoadState())),
+      ),
+      { initialValue: LOADING as LoadState<MediaSummary[]> },
+    );
+    return { state, retry: () => attempt.update((n) => n + 1) };
+  }
 }

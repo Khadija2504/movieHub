@@ -1,0 +1,57 @@
+@if (state().error; as error) {
+  <div class="container-page py-16"><app-error-state [message]="error" (retry)="retry()" /></div>
+} @else if (state().loading) {
+  <app-details-skeleton />
+} @else if (state().data; as movie) {
+  <app-title-hero
+    kind="Movie"
+    [title]="movie.title"
+    [year]="movie.year"
+    [posterUrl]="movie.posterUrl"
+    [backdropUrl]="movie.backdropUrl"
+    [rating]="movie.rating"
+    [voteCount]="movie.voteCount"
+    [facts]="facts()"
+    [genres]="movie.genres"
+    [tagline]="movie.tagline"
+    [overview]="movie.overview"
+    [hasTrailer]="!!movie.trailer"
+    (playTrailer)="trailerOpen.set(true)"
+  >
+    <!-- MovieHub offer. Buttons are wired to streaming / checkout in Phases 5-6. -->
+    @if (movie.offer.inCatalog) {
+      @if (movie.offer.streamable) {
+        <button type="button" class="btn btn-primary" disabled title="Streaming arrives in a later update">▶ Watch now</button>
+      }
+      @if (movie.offer.rentalPrice != null) {
+        <button type="button" class="btn btn-secondary" disabled>
+          Rent {{ movie.offer.rentalPrice | currency: currency }}
+        </button>
+      }
+      @if (movie.offer.purchasePrice != null) {
+        <button type="button" class="btn btn-secondary" disabled>
+          Buy {{ movie.offer.purchasePrice | currency: currency }}
+        </button>
+      }
+    } @else {
+      <span class="badge border border-border bg-surface/70 py-1.5 text-muted">Not available on MovieHub yet</span>
+    }
+  </app-title-hero>
+
+  <div class="container-page">
+    @if (movie.directors.length) {
+      <p class="pt-6 text-sm text-muted">
+        Directed by
+        <span class="font-medium text-foreground">{{ movie.directors.map((d) => d.name).join(', ') }}</span>
+      </p>
+    }
+    <app-cast-row [people]="movie.cast" />
+    @if (movie.recommendations.length) {
+      <app-media-carousel heading="You may also like" [items]="movie.recommendations" />
+    }
+  </div>
+
+  @if (trailerOpen() && movie.trailer) {
+    <app-trailer-modal [videoKey]="movie.trailer.key" [title]="movie.trailer.name" (closed)="trailerOpen.set(false)" />
+  }
+}

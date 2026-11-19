@@ -21,6 +21,35 @@ export const routes: Routes = [
         loadComponent: () => import('./features/public/home/home-page').then((m) => m.HomePage),
       },
       {
+        path: 'movies',
+        title: 'Movies · MovieHub',
+        data: { mediaType: 'MOVIE' },
+        loadComponent: () => import('./features/catalog/browse/browse-page').then((m) => m.BrowsePage),
+      },
+      {
+        path: 'movies/:id',
+        title: 'Movie · MovieHub',
+        loadComponent: () =>
+          import('./features/catalog/movie-details/movie-details-page').then((m) => m.MovieDetailsPage),
+      },
+      {
+        path: 'series',
+        title: 'TV Series · MovieHub',
+        data: { mediaType: 'SERIES' },
+        loadComponent: () => import('./features/catalog/browse/browse-page').then((m) => m.BrowsePage),
+      },
+      {
+        path: 'series/:id',
+        title: 'TV Series · MovieHub',
+        loadComponent: () =>
+          import('./features/catalog/series-details/series-details-page').then((m) => m.SeriesDetailsPage),
+      },
+      {
+        path: 'search',
+        title: 'Search · MovieHub',
+        loadComponent: () => import('./features/catalog/search/search-page').then((m) => m.SearchPage),
+      },
+      {
         path: 'login',
         title: 'Log in · MovieHub',
         canActivate: [guestGuard],
