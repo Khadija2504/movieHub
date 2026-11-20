@@ -1,19 +1,24 @@
 import { Component, computed, input, output } from '@angular/core';
 
+import { Icon } from '../icon/icon';
+
 /** Previous / numbered pages / next. Emits the 1-based page to show. */
 @Component({
   selector: 'app-pagination',
+  imports: [Icon],
   template: `
     @if (totalPages() > 1) {
-      <nav class="mt-10 flex flex-wrap items-center justify-center gap-1" aria-label="Pagination">
-        <button type="button" class="btn btn-ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">‹ Prev</button>
+      <nav class="mt-14 flex flex-wrap items-center justify-center gap-1.5" aria-label="Pagination">
+        <button type="button" class="btn btn-secondary btn-icon" [disabled]="page() <= 1" (click)="go(page() - 1)" aria-label="Previous page">
+          <app-icon name="chevron-left" class="size-4" />
+        </button>
         @for (p of pages(); track $index) {
           @if (p === null) {
-            <span class="px-2 text-muted">…</span>
+            <span class="w-8 text-center text-subtle">…</span>
           } @else {
             <button
               type="button"
-              class="btn min-w-10"
+              class="btn btn-icon"
               [class.btn-primary]="p === page()"
               [class.btn-ghost]="p !== page()"
               [attr.aria-current]="p === page() ? 'page' : null"
@@ -23,8 +28,8 @@ import { Component, computed, input, output } from '@angular/core';
             </button>
           }
         }
-        <button type="button" class="btn btn-ghost" [disabled]="page() >= totalPages()" (click)="go(page() + 1)">
-          Next ›
+        <button type="button" class="btn btn-secondary btn-icon" [disabled]="page() >= totalPages()" (click)="go(page() + 1)" aria-label="Next page">
+          <app-icon name="chevron-right" class="size-4" />
         </button>
       </nav>
     }
