@@ -1,89 +1,279 @@
 @import 'tailwindcss';
 
-/* ------------------------------------------------------------------
- * MovieHub design tokens (dark cinema theme).
- * Each --color-* token becomes a Tailwind utility: bg-surface, text-muted, border-border, ...
- * ------------------------------------------------------------------ */
+/* ==================================================================
+ * MovieHub design system: premium dark cinema theme.
+ * Every --color-* / --font-* / --animate-* token below becomes a Tailwind
+ * utility (bg-surface, text-muted, font-display, animate-fade-up, ...).
+ * ================================================================== */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Sora', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: #0b0b10;
-  --color-surface: #14141c;
-  --color-surface-raised: #1c1c27;
-  --color-border: #2a2a38;
-  --color-foreground: #f4f4f6;
-  --color-muted: #9b9bab;
+  /* Surfaces (blue-black, from deepest to most raised) */
+  --color-background: #07070c;
+  --color-surface: #0f0f17;
+  --color-surface-raised: #171722;
+  --color-surface-hover: #20202e;
+  --color-border: #ffffff14;
+  --color-border-strong: #ffffff26;
 
-  --color-primary: #e3424f;
-  --color-primary-hover: #f05663;
+  /* Text */
+  --color-foreground: #f6f6f9;
+  --color-muted: #a0a0b4;
+  --color-subtle: #6c6c82;
+
+  /* Brand: crimson -> ember gradient, gold for ratings */
+  --color-primary: #ff3b5c;
+  --color-primary-hover: #ff5876;
   --color-primary-foreground: #ffffff;
-  --color-accent: #f2b544;
+  --color-ember: #ff7a3d;
+  --color-accent: #ffbf47;
 
-  --color-success: #3ccf8e;
-  --color-warning: #f2b544;
-  --color-danger: #ef4444;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f43f5e;
 
-  --radius-card: 0.875rem;
+  --radius-card: 1rem;
+
+  /* Motion */
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.5s ease-out both;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-ken-burns: ken-burns 14s ease-out both;
+  --animate-progress: progress 7s linear both;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes ken-burns {
+    from { transform: scale(1.12); }
+    to { transform: scale(1); }
+  }
+  @keyframes progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: 150% 0; }
+    to { background-position: -50% 0; }
+  }
 }
 
+/* ------------------------------------------------------------------
+ * Custom utilities
+ * ------------------------------------------------------------------ */
+@utility bg-brand {
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-ember) 100%);
+}
+
+@utility text-gradient {
+  background-image: linear-gradient(120deg, var(--color-primary) 0%, var(--color-ember) 55%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Hollow numbers for the "Top 10" row */
+@utility text-outline {
+  -webkit-text-stroke: 2px rgb(255 255 255 / 0.28);
+  color: transparent;
+}
+
+@utility glass {
+  background-color: rgb(15 15 23 / 0.65);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--color-border);
+}
+
+@utility shadow-glow {
+  box-shadow: 0 12px 40px -12px rgb(255 59 92 / 0.65);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fades the edges of a horizontal scroller */
+@utility mask-fade-x {
+  mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 48px), transparent 100%);
+}
+
+/* Shimmering loading placeholder */
+@utility skeleton {
+  background-color: var(--color-surface-raised);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgb(255 255 255 / 0.05) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* ------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------ */
 @layer base {
   html {
     color-scheme: dark;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased min-h-dvh;
+    @apply min-h-dvh bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 0% -10%, rgb(255 59 92 / 0.07), transparent 60%),
+      radial-gradient(50rem 35rem at 100% 0%, rgb(99 102 241 / 0.06), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Subtle film grain over everything */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   h1, h2, h3, h4 {
     @apply font-display tracking-tight;
   }
 
+  ::selection {
+    background: rgb(255 59 92 / 0.35);
+  }
+
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-primary;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-hover);
+    border-radius: 999px;
+    border: 2px solid var(--color-background);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 /* ------------------------------------------------------------------
- * Reusable component classes
+ * Components
  * ------------------------------------------------------------------ */
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-10;
   }
 
+  /* Space for the fixed navbar on pages without a full-bleed hero */
+  .page-top {
+    @apply pt-24 sm:pt-28;
+  }
+
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold
-      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold
+      whitespace-nowrap transition duration-200 select-none active:scale-[0.97]
+      disabled:pointer-events-none disabled:opacity-45;
   }
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary-hover;
+    @apply bg-brand text-primary-foreground shadow-glow hover:brightness-110;
   }
   .btn-secondary {
-    @apply border border-border bg-surface-raised text-foreground hover:border-muted;
+    @apply glass text-foreground hover:border-border-strong hover:bg-surface-hover/80;
+  }
+  .btn-light {
+    @apply bg-white text-background hover:bg-white/85;
   }
   .btn-ghost {
-    @apply text-muted hover:bg-surface-raised hover:text-foreground;
+    @apply text-muted hover:bg-white/5 hover:text-foreground;
+  }
+  .btn-sm {
+    @apply h-8 px-3.5 text-xs;
   }
   .btn-lg {
-    @apply px-6 py-3 text-base;
+    @apply h-12 px-7 text-base;
+  }
+  .btn-icon {
+    @apply h-10 w-10 px-0;
   }
 
+  /* Surfaces */
   .card {
-    @apply rounded-card border border-border bg-surface;
+    @apply rounded-card border border-border bg-surface/80;
+  }
+  .card-hover {
+    @apply transition duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-raised/80;
   }
 
+  /* Forms */
   .input {
-    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground
-      placeholder:text-muted focus:border-primary focus:outline-none;
+    @apply h-11 w-full rounded-xl border border-border bg-white/[0.03] px-4 text-sm text-foreground
+      transition placeholder:text-subtle hover:border-border-strong
+      focus:border-primary/70 focus:bg-white/[0.05] focus:ring-4 focus:ring-primary/15 focus:outline-none;
   }
-
+  select.input {
+    @apply cursor-pointer appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0a0b4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.9rem center;
+  }
+  select.input option {
+    @apply bg-surface text-foreground;
+  }
   .label {
-    @apply mb-1 block text-sm font-medium text-foreground;
+    @apply mb-1.5 block text-sm font-medium text-foreground;
   }
 
+  /* Pills */
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .chip {
+    @apply inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-white/[0.03] px-4
+      text-sm font-medium whitespace-nowrap text-muted transition hover:border-border-strong hover:text-foreground;
+  }
+  .chip-active {
+    @apply border-transparent bg-white text-background hover:text-background;
+  }
+
+  /* Section headings */
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.2em] text-accent uppercase;
+  }
+  .section-title {
+    @apply text-xl font-bold sm:text-2xl;
   }
 }
