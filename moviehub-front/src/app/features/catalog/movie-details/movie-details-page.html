@@ -1,12 +1,11 @@
 @if (state().error; as error) {
-  <div class="container-page py-16"><app-error-state [message]="error" (retry)="retry()" /></div>
+  <div class="container-page page-top pb-16"><app-error-state [message]="error" (retry)="retry()" /></div>
 } @else if (state().loading) {
   <app-details-skeleton />
 } @else if (state().data; as movie) {
   <app-title-hero
     kind="Movie"
     [title]="movie.title"
-    [year]="movie.year"
     [posterUrl]="movie.posterUrl"
     [backdropUrl]="movie.backdropUrl"
     [rating]="movie.rating"
@@ -18,38 +17,79 @@
     [hasTrailer]="!!movie.trailer"
     (playTrailer)="trailerOpen.set(true)"
   >
-    <!-- MovieHub offer. Buttons are wired to streaming / checkout in Phases 5-6. -->
-    @if (movie.offer.inCatalog) {
-      @if (movie.offer.streamable) {
-        <button type="button" class="btn btn-primary" disabled title="Streaming arrives in a later update">▶ Watch now</button>
-      }
-      @if (movie.offer.rentalPrice != null) {
-        <button type="button" class="btn btn-secondary" disabled>
-          Rent {{ movie.offer.rentalPrice | currency: currency }}
-        </button>
-      }
-      @if (movie.offer.purchasePrice != null) {
-        <button type="button" class="btn btn-secondary" disabled>
-          Buy {{ movie.offer.purchasePrice | currency: currency }}
-        </button>
-      }
-    } @else {
-      <span class="badge border border-border bg-surface/70 py-1.5 text-muted">Not available on MovieHub yet</span>
+    @if (movie.offer.inCatalog && movie.offer.streamable) {
+      <button type="button" class="btn btn-primary btn-lg" disabled title="Streaming is coming soon">
+        <app-icon name="play" filled class="size-4" /> Watch now
+      </button>
     }
   </app-title-hero>
 
-  <div class="container-page">
-    @if (movie.directors.length) {
-      <p class="pt-6 text-sm text-muted">
-        Directed by
-        <span class="font-medium text-foreground">{{ movie.directors.map((d) => d.name).join(', ') }}</span>
-      </p>
-    }
-    <app-cast-row [people]="movie.cast" />
-    @if (movie.recommendations.length) {
-      <app-media-carousel heading="You may also like" [items]="movie.recommendations" />
-    }
+  <div class="container-page grid gap-10 lg:grid-cols-[1fr_22rem]">
+    <div class="min-w-0">
+      <app-cast-row [people]="movie.cast" />
+      <app-info-list [items]="info()" />
+    </div>
+
+    <aside class="space-y-5 lg:sticky lg:top-24 lg:h-fit lg:pt-8">
+      <!-- Watch options -->
+      <div class="card overflow-hidden">
+        <div class="border-b border-border bg-linear-to-r from-primary/10 to-transparent px-6 py-4">
+          <h3 class="font-display text-base font-semibold">Watch options</h3>
+          <p class="mt-0.5 text-xs text-muted">Available on MovieHub</p>
+        </div>
+        @if (movie.offer.inCatalog) {
+          <ul class="divide-y divide-border">
+            <li class="flex items-center gap-4 px-6 py-4">
+              <span class="grid size-10 place-items-center rounded-xl bg-white/5 text-muted"><app-icon name="tv" class="size-5" /></span>
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Stream</p>
+                <p class="text-xs text-muted">{{ movie.offer.streamable ? 'Included with a subscription' : 'Not available to stream' }}</p>
+              </div>
+              @if (movie.offer.streamable) {
+                <app-icon name="check" class="size-5 text-success" />
+              }
+            </li>
+            <li class="flex items-center gap-4 px-6 py-4">
+              <span class="grid size-10 place-items-center rounded-xl bg-white/5 text-muted"><app-icon name="clock" class="size-5" /></span>
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Rent</p>
+                <p class="text-xs text-muted">48-hour access</p>
+              </div>
+              @if (movie.offer.rentalPrice != null) {
+                <button type="button" class="btn btn-secondary btn-sm" disabled>{{ movie.offer.rentalPrice | currency: currency }}</button>
+              } @else {
+                <span class="text-xs text-subtle">Unavailable</span>
+              }
+            </li>
+            <li class="flex items-center gap-4 px-6 py-4">
+              <span class="grid size-10 place-items-center rounded-xl bg-white/5 text-muted"><app-icon name="library" class="size-5" /></span>
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Buy</p>
+                <p class="text-xs text-muted">Yours to keep forever</p>
+              </div>
+              @if (movie.offer.purchasePrice != null) {
+                <button type="button" class="btn btn-secondary btn-sm" disabled>{{ movie.offer.purchasePrice | currency: currency }}</button>
+              } @else {
+                <span class="text-xs text-subtle">Unavailable</span>
+              }
+            </li>
+          </ul>
+          <p class="border-t border-border px-6 py-3 text-xs text-subtle">Checkout is coming soon.</p>
+        } @else {
+          <div class="flex gap-3 px-6 py-5 text-sm text-muted">
+            <app-icon name="info" class="mt-0.5 size-5 shrink-0" />
+            <p>This title isn't available on MovieHub yet. Check back soon, or look for a screening at a cinema near you.</p>
+          </div>
+        }
+      </div>
+    </aside>
   </div>
+
+  @if (movie.recommendations.length) {
+    <div class="container-page">
+      <app-media-carousel heading="More like this" subheading="Recommended based on this title" icon="sparkles" [items]="movie.recommendations" />
+    </div>
+  }
 
   @if (trailerOpen() && movie.trailer) {
     <app-trailer-modal [videoKey]="movie.trailer.key" [title]="movie.trailer.name" (closed)="trailerOpen.set(false)" />

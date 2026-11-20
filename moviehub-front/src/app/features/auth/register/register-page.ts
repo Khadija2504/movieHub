@@ -1,4 +1,5 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
@@ -10,6 +11,8 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { errorMessage, toApiError } from '../../../core/http/api-error.util';
+import { Icon } from '../../../shared/components/icon/icon';
+import { AuthShell } from '../auth-shell';
 import { safeReturnUrl } from '../return-url';
 
 type Field = 'firstName' | 'lastName' | 'email' | 'password' | 'confirmPassword';
@@ -23,9 +26,28 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   return password && confirm && password !== confirm ? { passwordMismatch: true } : null;
 }
 
+const STRENGTH_LEVELS: Record<number, { label: string; color: string }> = {
+  0: { label: '', color: '' },
+  1: { label: 'Weak', color: 'bg-danger' },
+  2: { label: 'Fair', color: 'bg-warning' },
+  3: { label: 'Good', color: 'bg-ember' },
+  4: { label: 'Strong', color: 'bg-success' },
+};
+
+/** 0-4: length, letters + digits, mixed case, symbols. */
+export function passwordScore(password: string): number {
+  if (!password) return 0;
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[A-Za-z]/.test(password) && /\d/.test(password)) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password) || password.length >= 14) score++;
+  return Math.max(1, score);
+}
+
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShell, Icon],
   templateUrl: './register-page.html',
 })
 export class RegisterPage {
@@ -55,6 +77,16 @@ export class RegisterPage {
     },
     { validators: passwordsMatch },
   );
+
+  protected readonly showPassword = signal(false);
+
+  private readonly password = toSignal(this.form.controls.password.valueChanges, { initialValue: '' });
+
+  /** Visual hint only: the real rules are the validators above (and the backend). */
+  protected readonly strength = computed(() => {
+    const score = passwordScore(this.password());
+    return { score, ...STRENGTH_LEVELS[score] };
+  });
 
   /** First error message for a field, or null when it is valid / untouched. */
   protected error(field: Field): string | null {

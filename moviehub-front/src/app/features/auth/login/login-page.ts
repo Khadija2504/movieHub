@@ -4,11 +4,13 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { errorMessage } from '../../../core/http/api-error.util';
+import { Icon } from '../../../shared/components/icon/icon';
+import { AuthShell } from '../auth-shell';
 import { safeReturnUrl } from '../return-url';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShell, Icon],
   templateUrl: './login-page.html',
 })
 export class LoginPage {

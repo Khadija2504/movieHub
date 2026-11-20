@@ -1,107 +1,112 @@
-<header class="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
-  <nav class="container-page flex h-16 items-center justify-between gap-4" aria-label="Main">
+<header
+  class="fixed inset-x-0 top-0 z-50 transition-colors duration-300"
+  [class]="scrolled() || menuOpen() ? 'glass border-x-0! border-t-0!' : 'bg-linear-to-b from-black/70 to-transparent'"
+>
+  <nav class="container-page flex h-16 items-center gap-6 lg:h-[4.5rem]" aria-label="Main">
     <app-logo />
 
-    <ul class="hidden items-center gap-1 md:flex">
+    <!-- Desktop links -->
+    <ul class="hidden items-center gap-1 lg:flex">
       @for (link of links; track link.path) {
         <li>
           <a
             [routerLink]="link.path"
-            routerLinkActive="!text-foreground bg-surface-raised"
+            routerLinkActive="text-foreground! after:!scale-x-100"
             [routerLinkActiveOptions]="{ exact: link.path === '/' }"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+            class="relative px-3.5 py-2 text-sm font-medium text-muted transition-colors after:absolute after:inset-x-3.5 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-brand after:transition-transform after:duration-300 hover:text-foreground"
             >{{ link.label }}</a
           >
         </li>
       }
     </ul>
 
-    <div class="hidden items-center gap-2 md:flex">
-      <form role="search" class="relative" (submit)="search($event, searchBox.value); searchBox.value = ''">
+    <div class="ml-auto flex items-center gap-2">
+      <!-- Desktop search -->
+      <form role="search" class="group relative hidden md:block" (submit)="search($event, searchBox)">
+        <app-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 z-10 size-4 -translate-y-1/2 text-subtle transition-colors group-focus-within:text-foreground" />
         <input
           #searchBox
           type="search"
           name="q"
-          class="input w-44 py-1.5 pl-9 lg:w-56"
+          class="h-10 w-48 rounded-full border border-border bg-white/[0.04] pl-10 pr-4 text-sm text-foreground backdrop-blur transition-all duration-300 placeholder:text-subtle hover:border-border-strong focus:w-72 focus:border-primary/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-primary/15 focus:outline-none"
           placeholder="Search titles…"
           aria-label="Search movies and TV series"
         />
-        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
       </form>
-      @if (auth.isAuthenticated()) {
-        <app-user-menu />
-      } @else {
-        <a routerLink="/login" class="btn btn-ghost">Log in</a>
-        <a routerLink="/register" class="btn btn-primary">Sign up</a>
-      }
-    </div>
 
-    <button
-      type="button"
-      class="btn btn-ghost md:hidden"
-      (click)="toggleMenu()"
-      [attr.aria-expanded]="menuOpen()"
-      aria-controls="mobile-menu"
-      aria-label="Toggle menu"
-    >
-      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        @if (menuOpen()) {
-          <path d="M6 6l12 12M18 6 6 18" />
-        } @else {
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        }
-      </svg>
-    </button>
+      @if (auth.isAuthenticated()) {
+        <app-user-menu class="hidden lg:block" />
+      } @else {
+        <a routerLink="/login" class="btn btn-ghost hidden lg:inline-flex">Sign in</a>
+        <a routerLink="/register" class="btn btn-primary hidden sm:inline-flex">Get started</a>
+      }
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-icon lg:hidden"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="mobile-menu"
+        aria-label="Toggle menu"
+      >
+        <app-icon [name]="menuOpen() ? 'x' : 'menu'" class="size-6" />
+      </button>
+    </div>
   </nav>
 
+  <!-- Mobile menu -->
   @if (menuOpen()) {
-    <div id="mobile-menu" class="border-t border-border md:hidden">
-      <ul class="container-page flex flex-col gap-1 py-3">
-        <li class="mb-2">
-          <form role="search" (submit)="search($event, mobileSearch.value); closeMenu()">
-            <input #mobileSearch type="search" name="q" class="input" placeholder="Search movies and TV series…"
-              aria-label="Search movies and TV series" />
-          </form>
-        </li>
-        @for (link of links; track link.path) {
-          <li>
-            <a
-              [routerLink]="link.path"
-              (click)="closeMenu()"
-              class="block rounded-lg px-3 py-2 text-muted hover:bg-surface-raised hover:text-foreground"
-              >{{ link.label }}</a
-            >
-          </li>
-        }
-        @if (auth.user(); as user) {
-          <li class="mt-2 border-t border-border pt-3">
-            <p class="px-3 text-sm font-medium">{{ user.firstName }} {{ user.lastName }}</p>
-            <p class="px-3 text-xs text-muted">{{ user.email }}</p>
-          </li>
-          <li>
-            <a routerLink="/account" (click)="closeMenu()"
-              class="block rounded-lg px-3 py-2 text-muted hover:bg-surface-raised hover:text-foreground">My account</a>
-          </li>
-          @if (auth.isAdmin()) {
+    <div id="mobile-menu" class="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border lg:hidden animate-fade-in">
+      <div class="container-page space-y-6 py-5">
+        <form role="search" class="relative md:hidden" (submit)="search($event, mobileSearch)">
+          <app-icon name="search" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+          <input #mobileSearch type="search" name="q" class="input pl-11" placeholder="Search movies and TV series…" aria-label="Search movies and TV series" />
+        </form>
+
+        <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          @for (link of links; track link.path) {
             <li>
-              <a routerLink="/admin" (click)="closeMenu()"
-                class="block rounded-lg px-3 py-2 text-accent hover:bg-surface-raised">Admin panel</a>
+              <a
+                [routerLink]="link.path"
+                routerLinkActive="border-primary/50! text-foreground! bg-primary/10!"
+                [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+                class="flex items-center gap-3 rounded-xl border border-border bg-white/[0.03] px-4 py-3 text-sm font-medium text-muted"
+              >
+                <app-icon [name]="link.icon" class="size-5" />
+                {{ link.label }}
+              </a>
             </li>
           }
-          <li>
-            <button type="button" (click)="logout()"
-              class="block w-full rounded-lg px-3 py-2 text-left text-danger hover:bg-surface-raised">Log out</button>
-          </li>
+        </ul>
+
+        @if (auth.user(); as user) {
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <span class="grid size-11 place-items-center rounded-full bg-brand font-display text-sm font-bold">
+                {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+              </span>
+              <div class="min-w-0">
+                <p class="truncate font-semibold">{{ user.firstName }} {{ user.lastName }}</p>
+                <p class="truncate text-xs text-muted">{{ user.email }}</p>
+              </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <a routerLink="/account" class="btn btn-secondary"><app-icon name="dashboard" class="size-4" /> My account</a>
+              @if (auth.isAdmin()) {
+                <a routerLink="/admin" class="btn btn-secondary"><app-icon name="shield" class="size-4" /> Admin</a>
+              }
+              <button type="button" (click)="logout()" class="btn btn-ghost col-span-2 text-danger">
+                <app-icon name="logout" class="size-4" /> Sign out
+              </button>
+            </div>
+          </div>
         } @else {
-          <li class="mt-2 flex gap-2">
-            <a routerLink="/login" (click)="closeMenu()" class="btn btn-secondary flex-1">Log in</a>
-            <a routerLink="/register" (click)="closeMenu()" class="btn btn-primary flex-1">Sign up</a>
-          </li>
+          <div class="grid grid-cols-2 gap-2">
+            <a routerLink="/login" class="btn btn-secondary">Sign in</a>
+            <a routerLink="/register" class="btn btn-primary">Get started</a>
+          </div>
         }
-      </ul>
+      </div>
     </div>
   }
 </header>

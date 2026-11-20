@@ -8,6 +8,7 @@ import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
 import { BrowseFilter, Genre, MediaSummary, MediaType, Page, SortOption } from '../../../core/models/catalog';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ErrorState } from '../../../shared/components/error-state/error-state';
+import { Icon } from '../../../shared/components/icon/icon';
 import { MediaCard, MediaCardSkeleton } from '../../../shared/components/media-card/media-card';
 import { Pagination } from '../../../shared/components/pagination/pagination';
 
@@ -27,7 +28,7 @@ const optionalNumber = (value: unknown) => (value == null || value === '' ? unde
  */
 @Component({
   selector: 'app-browse-page',
-  imports: [MediaCard, MediaCardSkeleton, Pagination, ErrorState],
+  imports: [MediaCard, MediaCardSkeleton, Pagination, ErrorState, Icon],
   templateUrl: './browse-page.html',
 })
 export class BrowsePage {
@@ -46,7 +47,7 @@ export class BrowsePage {
   protected readonly sorts = SORTS;
   protected readonly ratings = RATINGS;
   protected readonly years = Array.from({ length: new Date().getFullYear() + 2 - 1950 }, (_, i) => new Date().getFullYear() + 1 - i);
-  protected readonly skeletons = Array.from({ length: 18 }, (_, i) => i);
+  protected readonly skeletons = Array.from({ length: 15 }, (_, i) => i);
 
   protected readonly heading = computed(() => (this.mediaType() === 'MOVIE' ? 'Movies' : 'TV Series'));
 
