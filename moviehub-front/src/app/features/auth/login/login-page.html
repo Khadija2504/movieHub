@@ -1,71 +1,76 @@
-<section class="container-page grid place-items-center py-16">
-  <div class="card w-full max-w-md p-8">
-    <h1 class="text-2xl font-bold">Welcome back</h1>
-    <p class="mt-1 text-sm text-muted">Log in to continue to MovieHub.</p>
+<app-auth-shell heading="Welcome back" subheading="Sign in to continue to MovieHub.">
+  @if (serverError(); as message) {
+    <div class="mb-6 flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger animate-scale-in" role="alert">
+      <app-icon name="alert" class="mt-0.5 size-4 shrink-0" />
+      {{ message }}
+    </div>
+  }
 
-    @if (serverError(); as message) {
-      <div class="mt-6 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
-        {{ message }}
-      </div>
-    }
-
-    <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <div>
-        <label class="label" for="email">Email</label>
+  <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div>
+      <label class="label" for="email">Email</label>
+      <div class="relative">
+        <app-icon name="mail" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-subtle" />
         <input
           id="email"
           type="email"
-          class="input"
+          class="input h-12! pl-11"
           formControlName="email"
           autocomplete="email"
-          [class.border-danger]="invalid('email')"
+          placeholder="you@example.com"
+          [class.!border-danger]="invalid('email')"
           [attr.aria-invalid]="invalid('email')"
         />
-        @if (invalid('email')) {
-          <p class="mt-1 text-xs text-danger">
-            {{ form.controls.email.hasError('required') ? 'Email is required' : 'Enter a valid email' }}
-          </p>
-        }
       </div>
+      @if (invalid('email')) {
+        <p class="mt-1.5 text-xs text-danger">
+          {{ form.controls.email.hasError('required') ? 'Email is required' : 'Enter a valid email' }}
+        </p>
+      }
+    </div>
 
-      <div>
-        <label class="label" for="password">Password</label>
-        <div class="relative">
-          <input
-            id="password"
-            class="input pr-16"
-            formControlName="password"
-            autocomplete="current-password"
-            [type]="showPassword() ? 'text' : 'password'"
-            [class.border-danger]="invalid('password')"
-            [attr.aria-invalid]="invalid('password')"
-          />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 px-3 text-xs font-medium text-muted hover:text-foreground"
-            (click)="showPassword.set(!showPassword())"
-          >
-            {{ showPassword() ? 'Hide' : 'Show' }}
-          </button>
-        </div>
-        @if (invalid('password')) {
-          <p class="mt-1 text-xs text-danger">Password is required</p>
-        }
+    <div>
+      <label class="label" for="password">Password</label>
+      <div class="relative">
+        <app-icon name="lock" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+        <input
+          id="password"
+          class="input h-12! pl-11 pr-12"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="Your password"
+          [type]="showPassword() ? 'text' : 'password'"
+          [class.!border-danger]="invalid('password')"
+          [attr.aria-invalid]="invalid('password')"
+        />
+        <button
+          type="button"
+          class="absolute inset-y-0 right-0 grid w-12 place-items-center text-muted transition-colors hover:text-foreground"
+          (click)="showPassword.set(!showPassword())"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        >
+          <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" class="size-4" />
+        </button>
       </div>
+      @if (invalid('password')) {
+        <p class="mt-1.5 text-xs text-danger">Password is required</p>
+      }
+    </div>
 
-      <button type="submit" class="btn btn-primary w-full" [disabled]="submitting()">
-        {{ submitting() ? 'Logging in…' : 'Log in' }}
-      </button>
-    </form>
+    <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="submitting()">
+      @if (submitting()) {
+        <span class="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span> Signing in…
+      } @else {
+        Sign in <app-icon name="arrow-right" class="size-4" />
+      }
+    </button>
+  </form>
 
-    <p class="mt-6 text-center text-sm text-muted">
-      New to MovieHub?
-      <a
-        routerLink="/register"
-        [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}"
-        class="font-medium text-primary hover:underline"
-        >Create an account</a
-      >
-    </p>
+  <div class="my-8 flex items-center gap-4 text-xs text-subtle">
+    <span class="h-px flex-1 bg-border"></span> New to MovieHub? <span class="h-px flex-1 bg-border"></span>
   </div>
-</section>
+
+  <a routerLink="/register" [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}" class="btn btn-secondary btn-lg w-full">
+    Create a free account
+  </a>
+</app-auth-shell>
