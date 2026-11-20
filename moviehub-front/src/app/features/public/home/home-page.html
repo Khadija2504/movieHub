@@ -1,57 +1,153 @@
-<!-- Hero: featured trending title -->
-<section class="relative isolate overflow-hidden border-b border-border">
-  @if (featured(); as item) {
-    <img
-      [src]="item.backdropUrl"
-      alt=""
-      class="absolute inset-0 -z-10 h-full w-full object-cover opacity-50"
-      fetchpriority="high"
-    />
-  }
-  <div
-    class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/70 to-background/20"
-    aria-hidden="true"
-  ></div>
-  <div
-    class="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/40 to-transparent"
-    aria-hidden="true"
-  ></div>
+<!-- ============================================================ HERO -->
+<section
+  class="relative isolate flex min-h-[38rem] items-end overflow-hidden pb-16 sm:min-h-[44rem] lg:h-[92vh] lg:max-h-[56rem] lg:pb-24"
+  (mouseenter)="heroPaused.set(true)"
+  (mouseleave)="heroPaused.set(false)"
+  aria-roledescription="carousel"
+  aria-label="Featured titles"
+>
+  <!-- Backdrops (cross-fade) -->
+  <div class="absolute inset-0 -z-20 bg-surface">
+    @for (slide of heroSlides(); track slide.mediaType + slide.id; let i = $index) {
+      <div class="absolute inset-0 transition-opacity duration-1000" [class.opacity-0]="i !== heroIndex()" [attr.aria-hidden]="i !== heroIndex()">
+        @if (i === heroIndex()) {
+          <img [src]="slide.backdropUrl" alt="" class="h-full w-full object-cover animate-ken-burns" [attr.fetchpriority]="i === 0 ? 'high' : null" />
+        } @else {
+          <img [src]="slide.backdropUrl" alt="" class="h-full w-full object-cover" loading="lazy" />
+        }
+      </div>
+    }
+  </div>
+  <!-- Readability gradients -->
+  <div class="absolute inset-0 -z-10 bg-linear-to-t from-background via-background/40 to-background/10" aria-hidden="true"></div>
+  <div class="absolute inset-0 -z-10 bg-linear-to-r from-background/95 via-background/50 to-transparent" aria-hidden="true"></div>
 
-  <div class="container-page py-20 sm:py-28 lg:py-36">
-    @if (featured(); as item) {
-      <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
-        Trending this week · {{ item.mediaType === 'MOVIE' ? 'Movie' : 'Series' }}
-      </p>
-      <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">{{ item.title }}</h1>
-      <p class="mt-5 line-clamp-3 max-w-2xl text-base text-muted sm:text-lg">{{ item.overview }}</p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a [routerLink]="[item.mediaType === 'MOVIE' ? '/movies' : '/series', item.id]" class="btn btn-primary btn-lg">
-          More info
-        </a>
-        <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+  <div class="container-page w-full">
+    @if (hero(); as item) {
+      @let rank = heroIndex() + 1;
+      <div class="max-w-2xl" [attr.aria-live]="heroPaused() ? 'polite' : 'off'">
+        @for (slide of [item]; track slide.mediaType + slide.id) {
+          <div class="animate-fade-up">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="badge bg-brand text-white shadow-glow">
+                <app-icon name="flame" class="size-3.5" /> #{{ rank }} Trending
+              </span>
+              <span class="badge glass text-white/90">{{ item.mediaType === 'MOVIE' ? 'Movie' : 'TV Series' }}</span>
+            </div>
+
+            <h1 class="mt-5 line-clamp-2 text-4xl font-extrabold leading-[1.05] sm:text-6xl lg:text-7xl">{{ item.title }}</h1>
+
+            <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/80">
+              @if (item.rating) {
+                <span class="inline-flex items-center gap-1.5 font-semibold text-white">
+                  <app-icon name="star" filled class="size-4 text-accent" /> {{ item.rating | number: '1.1-1' }}
+                </span>
+              }
+              @if (item.year) {
+                <span class="inline-flex items-center gap-1.5"><app-icon name="calendar" class="size-4" /> {{ item.year }}</span>
+              }
+              @if (item.voteCount) {
+                <span class="inline-flex items-center gap-1.5"><app-icon name="users" class="size-4" /> {{ item.voteCount | number }} votes</span>
+              }
+            </div>
+
+            <p class="mt-5 line-clamp-3 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">{{ item.overview }}</p>
+
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a [routerLink]="detailsLink(item)" class="btn btn-light btn-lg">
+                <app-icon name="play" filled class="size-4" /> View details
+              </a>
+              <a [routerLink]="item.mediaType === 'MOVIE' ? '/movies' : '/series'" class="btn btn-secondary btn-lg">
+                <app-icon name="grid" class="size-4" /> Browse {{ item.mediaType === 'MOVIE' ? 'movies' : 'series' }}
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Slide controls -->
+      @if (heroSlides().length > 1) {
+        <div class="mt-12 flex items-center gap-6">
+          <div class="flex gap-2" role="tablist" aria-label="Choose slide">
+            @for (slide of heroSlides(); track slide.mediaType + slide.id; let i = $index) {
+              <button
+                type="button"
+                role="tab"
+                class="relative h-1.5 w-10 overflow-hidden rounded-full bg-white/20 transition-all hover:bg-white/35 sm:w-14"
+                [attr.aria-selected]="i === heroIndex()"
+                [attr.aria-label]="'Show ' + slide.title"
+                (click)="goToSlide(i)"
+              >
+                @if (i === heroIndex()) {
+                  <span
+                    class="absolute inset-0 origin-left rounded-full bg-white animate-progress"
+                    [style.animation-play-state]="heroPaused() ? 'paused' : 'running'"
+                  ></span>
+                } @else if (i < heroIndex()) {
+                  <span class="absolute inset-0 rounded-full bg-white/60"></span>
+                }
+              </button>
+            }
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-secondary btn-icon" (click)="prevSlide()" aria-label="Previous slide">
+              <app-icon name="chevron-left" class="size-5" />
+            </button>
+            <button type="button" class="btn btn-secondary btn-icon" (click)="nextSlide()" aria-label="Next slide">
+              <app-icon name="chevron-right" class="size-5" />
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Up next posters (large screens) -->
+      <div class="absolute bottom-24 right-10 hidden gap-4 xl:flex">
+        @for (slide of heroSlides(); track slide.mediaType + slide.id; let i = $index) {
+          <button
+            type="button"
+            class="group relative w-28 overflow-hidden rounded-xl ring-1 transition duration-300"
+            [class]="i === heroIndex() ? 'ring-2 ring-white scale-105' : 'ring-white/15 opacity-60 hover:opacity-100'"
+            (click)="goToSlide(i)"
+            [attr.aria-label]="'Show ' + slide.title"
+          >
+            @if (slide.posterUrl) {
+              <img [src]="slide.posterUrl" alt="" class="aspect-2/3 w-full object-cover" />
+            }
+          </button>
+        }
       </div>
     } @else if (trending.state().loading) {
-      <div class="animate-pulse space-y-5" aria-hidden="true">
-        <div class="h-4 w-48 rounded bg-surface-raised"></div>
-        <div class="h-14 w-full max-w-2xl rounded bg-surface-raised"></div>
-        <div class="h-20 w-full max-w-xl rounded bg-surface-raised"></div>
+      <div class="max-w-2xl space-y-5" aria-hidden="true">
+        <div class="skeleton h-7 w-40 rounded-full"></div>
+        <div class="skeleton h-16 w-full rounded-2xl"></div>
+        <div class="skeleton h-5 w-64 rounded-full"></div>
+        <div class="skeleton h-20 w-full max-w-xl rounded-2xl"></div>
+        <div class="flex gap-3"><div class="skeleton h-12 w-40 rounded-full"></div><div class="skeleton h-12 w-40 rounded-full"></div></div>
       </div>
     } @else {
-      <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-accent">Stream · Rent · Book</p>
-      <h1 class="max-w-3xl text-4xl font-extrabold sm:text-6xl">
-        Your movies, at home <span class="text-primary">and</span> on the big screen.
-      </h1>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a routerLink="/movies" class="btn btn-primary btn-lg">Browse movies</a>
-        <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+      <!-- Fallback when the catalog is unavailable -->
+      <div class="max-w-3xl animate-fade-up">
+        <p class="eyebrow">Stream · Rent · Book</p>
+        <h1 class="mt-4 text-5xl font-extrabold leading-[1.05] sm:text-7xl">
+          Every story,<br />
+          <span class="text-gradient">at home & on the big screen.</span>
+        </h1>
+        <p class="mt-6 max-w-xl text-lg text-muted">Discover movies and series, stream them online, or book the best seats at a cinema near you.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a routerLink="/movies" class="btn btn-primary btn-lg">Browse movies</a>
+          <a routerLink="/cinemas" class="btn btn-secondary btn-lg">Find a cinema</a>
+        </div>
       </div>
     }
   </div>
 </section>
 
-<div class="container-page">
+<!-- ============================================================ ROWS -->
+<div class="container-page relative">
   <app-media-carousel
-    heading="Trending this week"
+    heading="Trending now"
+    subheading="What everyone is watching this week"
+    icon="flame"
     [items]="trending.state().data ?? []"
     [loading]="trending.state().loading"
     [error]="trending.state().error"
@@ -59,8 +155,35 @@
     showType
   />
 
+  <!-- Top 10 -->
+  @if (topTen().length >= 5) {
+    <section class="py-8" aria-labelledby="top10-heading">
+      <div class="mb-5 flex items-center gap-3">
+        <span class="grid size-9 place-items-center rounded-xl bg-accent/12 text-accent ring-1 ring-accent/25">
+          <app-icon name="trophy" class="size-[1.1rem]" />
+        </span>
+        <div>
+          <h2 id="top10-heading" class="section-title">Top 10 this week</h2>
+          <p class="mt-0.5 text-sm text-muted">The most popular titles right now</p>
+        </div>
+      </div>
+      <ol class="scrollbar-none -mx-4 flex snap-x gap-3 overflow-x-auto scroll-px-4 px-4 pb-4 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:-mx-10 lg:gap-4 lg:scroll-px-10 lg:px-10">
+        @for (item of topTen(); track item.mediaType + item.id; let i = $index) {
+          <li class="flex shrink-0 snap-start items-end">
+            <span class="text-outline relative z-0 -mr-4 mb-14 select-none font-display text-[6.5rem] font-extrabold leading-[0.75] tracking-tighter sm:-mr-5 sm:mb-16 sm:text-[8.5rem]" aria-hidden="true">{{ i + 1 }}</span>
+            <div class="relative z-10 w-32 sm:w-40">
+              <app-media-card [item]="item" />
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
   <app-media-carousel
     heading="Popular movies"
+    subheading="Crowd favourites, updated daily"
+    icon="film"
     [items]="popularMovies.state().data ?? []"
     [loading]="popularMovies.state().loading"
     [error]="popularMovies.state().error"
@@ -68,8 +191,48 @@
     viewAllLink="/movies"
   />
 
+  <!-- Genres -->
+  @if (genreTiles().length) {
+    <section class="py-8" aria-labelledby="genres-heading">
+      <div class="mb-5 flex items-end justify-between">
+        <div class="flex items-center gap-3">
+          <span class="grid size-9 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20">
+            <app-icon name="sparkles" class="size-[1.1rem]" />
+          </span>
+          <div>
+            <h2 id="genres-heading" class="section-title">Browse by genre</h2>
+            <p class="mt-0.5 text-sm text-muted">Find exactly what you're in the mood for</p>
+          </div>
+        </div>
+        <a routerLink="/movies" class="group hidden items-center gap-1 text-sm font-medium text-muted hover:text-foreground sm:inline-flex">
+          All genres <app-icon name="arrow-right" class="size-4 transition-transform group-hover:translate-x-0.5" />
+        </a>
+      </div>
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+        @for (genre of genreTiles(); track genre.id) {
+          <li>
+            <a
+              routerLink="/movies"
+              [queryParams]="{ genre: genre.id }"
+              class="group relative flex h-24 items-end overflow-hidden rounded-card bg-linear-to-br p-4 ring-1 ring-white/10 transition duration-300 hover:-translate-y-1 hover:ring-white/30 sm:h-28"
+              [class]="genre.gradient"
+            >
+              <span class="absolute -right-4 -top-6 font-display text-8xl font-extrabold text-white/10 transition-transform duration-500 group-hover:scale-110" aria-hidden="true">
+                {{ genre.name.charAt(0) }}
+              </span>
+              <span class="relative font-display text-lg font-bold">{{ genre.name }}</span>
+              <app-icon name="arrow-right" class="relative ml-auto size-5 -translate-x-2 opacity-0 transition duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   <app-media-carousel
     heading="Popular TV series"
+    subheading="Binge-worthy shows everyone is talking about"
+    icon="tv"
     [items]="popularSeries.state().data ?? []"
     [loading]="popularSeries.state().loading"
     [error]="popularSeries.state().error"
@@ -78,15 +241,56 @@
   />
 
   <!-- Cinema promo -->
-  <section class="my-8 overflow-hidden rounded-card border border-border bg-gradient-to-br from-primary/25 via-surface to-surface p-8 sm:p-12">
-    <p class="text-sm font-semibold uppercase tracking-widest text-accent">On the big screen</p>
-    <h2 class="mt-2 max-w-xl text-2xl font-bold sm:text-3xl">Pick your seat, pay online, show your QR code.</h2>
-    <p class="mt-2 max-w-xl text-muted">Book tickets at cinemas near you in a few clicks.</p>
-    <a routerLink="/cinemas" class="btn btn-primary mt-6">Browse cinemas</a>
+  <section class="my-10 overflow-hidden rounded-[1.75rem] border border-border bg-surface/60" aria-labelledby="cinema-heading">
+    <div class="grid items-center gap-10 p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
+      <div>
+        <p class="eyebrow">On the big screen</p>
+        <h2 id="cinema-heading" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+          Your seat is waiting.<br /><span class="text-gradient">Book it in seconds.</span>
+        </h2>
+        <ul class="mt-8 space-y-4">
+          @for (feature of ['Browse showtimes at cinemas near you', 'Pick your exact seat on a live map', 'Pay securely and get a QR ticket instantly']; track feature) {
+            <li class="flex items-center gap-3 text-muted">
+              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-success/15 text-success"><app-icon name="check" class="size-4" /></span>
+              {{ feature }}
+            </li>
+          }
+        </ul>
+        <a routerLink="/cinemas" class="btn btn-primary btn-lg mt-10">
+          <app-icon name="ticket" class="size-5" /> Book tickets
+        </a>
+      </div>
+
+      <!-- Decorative seat map -->
+      <div class="relative mx-auto w-full max-w-md" aria-hidden="true">
+        <div class="mx-auto mb-8 h-10 w-4/5 rounded-[50%_50%_0_0/100%_100%_0_0] border-t-4 border-primary/80 shadow-[0_-12px_40px_-8px_rgb(255_59_92/0.6)]"></div>
+        <p class="-mt-6 mb-6 text-center text-[0.65rem] tracking-[0.4em] text-subtle uppercase">Screen</p>
+        <div class="space-y-2.5">
+          @for (row of seatRows; track $index) {
+            <div class="flex justify-center gap-1.5 sm:gap-2">
+              @for (seat of row; track $index; let c = $index) {
+                <span
+                  class="size-5 rounded-t-md rounded-b-sm sm:size-6"
+                  [class]="seat === 'selected' ? 'bg-brand shadow-glow' : seat === 'taken' ? 'bg-white/10' : 'bg-white/25'"
+                  [class.ml-3]="c === 6"
+                ></span>
+              }
+            </div>
+          }
+        </div>
+        <div class="mt-8 flex justify-center gap-6 text-xs text-muted">
+          <span class="flex items-center gap-2"><span class="size-3 rounded-sm bg-white/25"></span> Available</span>
+          <span class="flex items-center gap-2"><span class="size-3 rounded-sm bg-white/10"></span> Taken</span>
+          <span class="flex items-center gap-2"><span class="size-3 rounded-sm bg-brand"></span> Your seats</span>
+        </div>
+      </div>
+    </div>
   </section>
 
   <app-media-carousel
     heading="Top rated movies"
+    subheading="Critically acclaimed, all-time greats"
+    icon="star"
     [items]="topRatedMovies.state().data ?? []"
     [loading]="topRatedMovies.state().loading"
     [error]="topRatedMovies.state().error"
@@ -94,4 +298,18 @@
     viewAllLink="/movies"
     [viewAllParams]="{ sort: 'TOP_RATED' }"
   />
+
+  <!-- Closing CTA -->
+  @if (!auth.isAuthenticated()) {
+    <section class="relative mt-10 overflow-hidden rounded-[1.75rem] bg-brand p-10 text-center shadow-glow sm:p-16">
+      <div class="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-white/15 blur-3xl" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -bottom-24 -right-10 size-80 rounded-full bg-black/20 blur-3xl" aria-hidden="true"></div>
+      <h2 class="relative text-3xl font-extrabold sm:text-5xl">Ready when you are.</h2>
+      <p class="relative mx-auto mt-4 max-w-xl text-white/85">Create a free account to build your watchlist, rent the latest releases and book cinema seats.</p>
+      <div class="relative mt-8 flex flex-wrap justify-center gap-3">
+        <a routerLink="/register" class="btn btn-light btn-lg">Create free account</a>
+        <a routerLink="/plans" class="btn btn-lg border border-white/40 text-white hover:bg-white/10">See plans</a>
+      </div>
+    </section>
+  }
 </div>
