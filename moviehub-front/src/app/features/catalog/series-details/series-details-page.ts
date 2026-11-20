@@ -19,13 +19,15 @@ import { ErrorState } from '../../../shared/components/error-state/error-state';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
 import { TrailerModal } from '../../../shared/components/trailer-modal/trailer-modal';
 import { RuntimePipe } from '../../../shared/pipes/runtime.pipe';
+import { Icon } from '../../../shared/components/icon/icon';
 import { CastRow } from '../components/cast-row';
 import { DetailsSkeleton } from '../components/details-skeleton';
-import { TitleHero } from '../components/title-hero';
+import { InfoItem, InfoList } from '../components/info-list';
+import { HeroFact, TitleHero } from '../components/title-hero';
 
 @Component({
   selector: 'app-series-details-page',
-  imports: [TitleHero, CastRow, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, RuntimePipe],
+  imports: [TitleHero, CastRow, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, RuntimePipe, Icon],
   templateUrl: './series-details-page.html',
 })
 export class SeriesDetailsPage {
@@ -74,17 +76,36 @@ export class SeriesDetailsPage {
     { initialValue: LOADING as LoadState<SeasonDetails> },
   );
 
-  protected readonly facts = computed(() => {
+  private readonly years = computed(() => {
+    const s = this.state().data;
+    const start = s?.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null;
+    const end = s?.status === 'Ended' && s.lastAirDate ? new Date(s.lastAirDate).getFullYear() : null;
+    if (!start) return null;
+    return end && end !== start ? `${start}–${end}` : s?.status === 'Ended' ? `${start}` : `${start}–`;
+  });
+
+  protected readonly facts = computed<HeroFact[]>(() => {
     const s = this.state().data;
     if (!s) return [];
-    const start = s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null;
-    const end = s.status === 'Ended' && s.lastAirDate ? new Date(s.lastAirDate).getFullYear() : null;
+    const facts: HeroFact[] = [];
+    const years = this.years();
+    if (years) facts.push({ icon: 'calendar', label: years });
+    if (s.numberOfSeasons) facts.push({ icon: 'tv', label: `${s.numberOfSeasons} season${s.numberOfSeasons > 1 ? 's' : ''}` });
+    if (s.episodeRuntime) facts.push({ icon: 'clock', label: `${s.episodeRuntime}m / episode` });
+    return facts;
+  });
+
+  protected readonly info = computed<InfoItem[]>(() => {
+    const s = this.state().data;
+    if (!s) return [];
     return [
-      start ? (end && end !== start ? `${start}–${end}` : `${start}`) : null,
-      s.numberOfSeasons ? `${s.numberOfSeasons} season${s.numberOfSeasons > 1 ? 's' : ''}` : null,
-      s.numberOfEpisodes ? `${s.numberOfEpisodes} episodes` : null,
-      s.status,
-    ].filter((f): f is string => !!f);
+      { label: s.creators.length > 1 ? 'Creators' : 'Creator', value: s.creators.map((c) => c.name).join(', ') },
+      { label: 'Status', value: s.status },
+      { label: 'Aired', value: this.years() },
+      { label: 'Seasons', value: s.numberOfSeasons?.toString() },
+      { label: 'Episodes', value: s.numberOfEpisodes?.toString() },
+      { label: 'Genres', value: s.genres.map((g) => g.name).join(', ') },
+    ];
   });
 
   constructor() {
