@@ -1,14 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { Avatar } from '../../shared/components/avatar/avatar';
 import { Icon } from '../../shared/components/icon/icon';
 import { Logo } from '../../shared/components/logo/logo';
 import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-admin-layout',
-  imports: [RouterOutlet, RouterLink, Logo, Sidebar, Icon],
+  imports: [RouterOutlet, RouterLink, Logo, Sidebar, Icon, Avatar],
   host: { '(document:keydown.escape)': 'sidebarOpen.set(false)' },
   template: `
     <div class="flex min-h-dvh">
@@ -51,7 +52,7 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
                   <p class="text-sm font-medium">{{ user.firstName }} {{ user.lastName }}</p>
                   <p class="text-xs text-muted">{{ user.email }}</p>
                 </div>
-                <span class="grid size-10 place-items-center rounded-full bg-brand font-display text-sm font-bold">{{ initials() }}</span>
+                <app-avatar class="size-10" [name]="user.firstName + ' ' + user.lastName" [url]="user.avatarUrl" />
               </div>
             }
             <button type="button" class="btn btn-ghost btn-icon" (click)="auth.logout()" aria-label="Sign out" title="Sign out">
@@ -69,11 +70,6 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
 export class AdminLayout {
   protected readonly auth = inject(AuthService);
   protected readonly sidebarOpen = signal(false);
-
-  protected readonly initials = computed(() => {
-    const u = this.auth.user();
-    return u ? `${u.firstName.charAt(0)}${u.lastName.charAt(0)}`.toUpperCase() : '';
-  });
 
   protected readonly sections: SidebarSection[] = [
     {

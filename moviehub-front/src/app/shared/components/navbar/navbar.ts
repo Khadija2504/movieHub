@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { Avatar } from '../avatar/avatar';
 import { Icon, IconName } from '../icon/icon';
 import { Logo } from '../logo/logo';
 import { UserMenu } from '../user-menu/user-menu';
@@ -20,7 +21,7 @@ interface NavLink {
  */
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive, Logo, UserMenu, Icon],
+  imports: [RouterLink, RouterLinkActive, Logo, UserMenu, Icon, Avatar],
   templateUrl: './navbar.html',
   host: { '(window:scroll)': 'onScroll()' },
 })
