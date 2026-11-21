@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { Avatar } from '../avatar/avatar';
 import { Icon, IconName } from '../icon/icon';
 
 interface MenuLink {
@@ -13,7 +14,7 @@ interface MenuLink {
 /** Avatar button + dropdown shown in the navbar when logged in. */
 @Component({
   selector: 'app-user-menu',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, Avatar],
   host: { '(document:keydown.escape)': 'open.set(false)' },
   template: `
     @if (auth.user(); as user) {
@@ -25,11 +26,7 @@ interface MenuLink {
           [attr.aria-expanded]="open()"
           aria-haspopup="menu"
         >
-          @if (user.avatarUrl) {
-            <img [src]="user.avatarUrl" alt="" class="size-8 rounded-full object-cover" />
-          } @else {
-            <span class="grid size-8 place-items-center rounded-full bg-brand font-display text-xs font-bold">{{ initials() }}</span>
-          }
+          <app-avatar class="size-8" [name]="user.firstName + ' ' + user.lastName" [url]="user.avatarUrl" />
           <span class="text-sm font-medium">{{ user.firstName }}</span>
           <app-icon name="chevron-down" class="size-4 text-muted transition-transform" [class.rotate-180]="open()" />
         </button>
@@ -38,7 +35,7 @@ interface MenuLink {
           <div class="fixed inset-0 z-40" (click)="open.set(false)"></div>
           <div class="glass absolute right-0 z-50 mt-3 w-64 origin-top-right rounded-2xl p-2 shadow-2xl animate-scale-in" role="menu">
             <div class="flex items-center gap-3 px-3 py-3">
-              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-brand font-display text-sm font-bold">{{ initials() }}</span>
+              <app-avatar class="size-10" [name]="user.firstName + ' ' + user.lastName" [url]="user.avatarUrl" />
               <div class="min-w-0">
                 <p class="truncate text-sm font-semibold">{{ user.firstName }} {{ user.lastName }}</p>
                 <p class="truncate text-xs text-muted">{{ user.email }}</p>
@@ -93,11 +90,6 @@ export class UserMenu {
     { label: 'My Bookings', path: '/account/bookings', icon: 'ticket' },
     { label: 'Settings', path: '/account/settings', icon: 'settings' },
   ];
-
-  protected readonly initials = computed(() => {
-    const user = this.auth.user();
-    return user ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase() : '';
-  });
 
   protected logout(): void {
     this.open.set(false);

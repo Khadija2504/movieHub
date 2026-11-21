@@ -16,9 +16,10 @@ public record AppProperties(Cors cors, Tmdb tmdb, Jwt jwt, Admin admin) {
 
     /**
      * @param apiKey either a v3 "API Key" (sent as ?api_key=) or a v4 "API Read Access Token" (sent as Bearer header)
+     * @param proxy  optional HTTP proxy for outgoing TMDB calls ("http://host:port" or "host:port"), blank for none
      */
     public record Tmdb(String apiKey, String baseUrl, String imageBaseUrl, String language,
-            Duration connectTimeout, Duration readTimeout) {
+            Duration connectTimeout, Duration readTimeout, String proxy) {
     }
 
     public record Jwt(String secret, Duration accessTokenTtl, Duration refreshTokenTtl) {

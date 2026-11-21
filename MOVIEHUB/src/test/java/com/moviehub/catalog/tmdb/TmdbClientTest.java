@@ -36,7 +36,7 @@ class TmdbClientTest {
             builder.defaultHeader("Authorization", "Bearer " + apiKey);
         }
         var tmdb = new AppProperties.Tmdb(apiKey, BASE, "https://image.tmdb.org/t/p", "en-US",
-                Duration.ofSeconds(1), Duration.ofSeconds(1));
+                Duration.ofSeconds(1), Duration.ofSeconds(1), null);
         return new TmdbClient(builder.build(), new AppProperties(null, tmdb, null, null));
     }
 

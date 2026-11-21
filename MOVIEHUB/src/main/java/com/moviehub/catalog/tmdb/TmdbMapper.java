@@ -202,7 +202,7 @@ public class TmdbMapper {
                 .orElse(null);
     }
 
-    static LocalDate parseDate(String value) {
+    public static LocalDate parseDate(String value) {
         if (!StringUtils.hasText(value)) {
             return null;
         }

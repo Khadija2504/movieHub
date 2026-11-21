@@ -17,6 +17,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -42,6 +44,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({BadRequestException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ApiError> handleBadRequest(Exception ex, HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return build(HttpStatus.CONTENT_TOO_LARGE, "File is too large (max 2 MB)", req);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    ResponseEntity<ApiError> handleMissingPart(MissingServletRequestPartException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Please choose a file", req);
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, HandlerMethodValidationException.class})

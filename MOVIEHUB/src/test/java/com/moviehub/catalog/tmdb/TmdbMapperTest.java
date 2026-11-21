@@ -22,7 +22,7 @@ import com.moviehub.config.AppProperties;
 class TmdbMapperTest {
 
     private final TmdbMapper mapper = new TmdbMapper(new AppProperties(null,
-            new AppProperties.Tmdb("k", "https://api", "https://img", "en-US", Duration.ZERO, Duration.ZERO), null, null));
+            new AppProperties.Tmdb("k", "https://api", "https://img", "en-US", Duration.ZERO, Duration.ZERO, null), null, null));
 
     private static MediaItem item(int id, String mediaType, String title, String name, String date) {
         return new MediaItem(id, title, name, "overview", "/p.jpg", null, date, date, 7.456, 100, List.of(28), mediaType);

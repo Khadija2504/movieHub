@@ -22,6 +22,7 @@
         <app-icon name="play" filled class="size-4" /> Watch now
       </button>
     }
+    <app-watchlist-button variant="button" mediaType="SERIES" [tmdbId]="series.id" [title]="series.title" />
   </app-title-hero>
 
   <div class="container-page grid gap-10 lg:grid-cols-[1fr_22rem]">
@@ -109,6 +110,7 @@
 
       <app-cast-row [people]="series.cast" />
       <app-info-list [items]="info()" />
+      <app-reviews-section mediaType="SERIES" [tmdbId]="series.id" [title]="series.title" />
     </div>
 
     <aside class="space-y-5 lg:sticky lg:top-24 lg:h-fit lg:pt-8">

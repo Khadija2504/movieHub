@@ -82,9 +82,7 @@
         @if (auth.user(); as user) {
           <div class="card p-4">
             <div class="flex items-center gap-3">
-              <span class="grid size-11 place-items-center rounded-full bg-brand font-display text-sm font-bold">
-                {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
-              </span>
+              <app-avatar class="size-11" [name]="user.firstName + ' ' + user.lastName" [url]="user.avatarUrl" />
               <div class="min-w-0">
                 <p class="truncate font-semibold">{{ user.firstName }} {{ user.lastName }}</p>
                 <p class="truncate text-xs text-muted">{{ user.email }}</p>

@@ -1,14 +1,17 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, booleanAttribute, computed, input } from '@angular/core';
+import { Component, booleanAttribute, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { MediaSummary } from '../../../core/models/catalog';
+import { WatchlistService } from '../../../core/services/watchlist.service';
 import { Icon } from '../icon/icon';
+import { WatchlistButton } from '../watchlist-button/watchlist-button';
 
 /** Poster card linking to the movie / series details page, with a hover reveal. */
 @Component({
   selector: 'app-media-card',
-  imports: [RouterLink, DecimalPipe, Icon],
+  imports: [RouterLink, DecimalPipe, Icon, WatchlistButton],
+  host: { class: 'group/card relative block' },
   template: `
     <a [routerLink]="link()" class="group block focus-visible:outline-none" [attr.aria-label]="item().title">
       <div
@@ -37,17 +40,19 @@ import { Icon } from '../icon/icon';
           }
         </div>
 
-        @if (item().rating) {
-          <span class="badge absolute left-2 top-2 bg-black/60 text-white backdrop-blur-md">
-            <app-icon name="star" filled class="size-3 text-accent" />
-            {{ item().rating | number: '1.1-1' }}
-          </span>
-        }
-        @if (showType()) {
-          <span class="badge absolute right-2 top-2 bg-black/60 text-[0.65rem] tracking-wider text-white/90 uppercase backdrop-blur-md">
-            {{ item().mediaType === 'MOVIE' ? 'Movie' : 'Series' }}
-          </span>
-        }
+        <div class="absolute left-2 top-2 flex flex-col items-start gap-1.5">
+          @if (item().rating) {
+            <span class="badge bg-black/60 text-white backdrop-blur-md">
+              <app-icon name="star" filled class="size-3 text-accent" />
+              {{ item().rating | number: '1.1-1' }}
+            </span>
+          }
+          @if (showType()) {
+            <span class="badge bg-black/60 text-[0.65rem] tracking-wider text-white/90 uppercase backdrop-blur-md">
+              {{ item().mediaType === 'MOVIE' ? 'Movie' : 'Series' }}
+            </span>
+          }
+        </div>
       </div>
       <p class="mt-3 line-clamp-1 text-sm font-semibold transition-colors group-hover:text-primary">{{ item().title }}</p>
       <p class="mt-0.5 text-xs text-muted">
@@ -56,12 +61,24 @@ import { Icon } from '../icon/icon';
         {{ item().mediaType === 'MOVIE' ? 'Movie' : 'Series' }}
       </p>
     </a>
+
+    <!-- Sibling of the link (a button must not be nested in an <a>); follows the poster's hover lift. -->
+    <app-watchlist-button
+      class="absolute right-2 top-2 transition duration-300 group-hover/card:-translate-y-1.5 group-hover/card:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+      [class.opacity-0]="!saved()"
+      [mediaType]="item().mediaType"
+      [tmdbId]="item().id"
+      [title]="item().title"
+    />
   `,
 })
 export class MediaCard {
   readonly item = input.required<MediaSummary>();
   /** Show a Movie/Series badge on the poster (useful in mixed lists like search or trending). */
   readonly showType = input(false, { transform: booleanAttribute });
+
+  private readonly watchlist = inject(WatchlistService);
+  protected readonly saved = computed(() => this.watchlist.isSaved(this.item().mediaType, this.item().id));
 
   protected readonly link = computed(() => [
     this.item().mediaType === 'MOVIE' ? '/movies' : '/series',

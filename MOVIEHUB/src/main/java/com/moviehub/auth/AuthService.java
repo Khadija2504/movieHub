@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.moviehub.auth.dto.AuthResponse;
 import com.moviehub.auth.dto.LoginRequest;
 import com.moviehub.auth.dto.RegisterRequest;
+import com.moviehub.common.exception.BadRequestException;
 import com.moviehub.common.exception.ConflictException;
 import com.moviehub.config.AppProperties;
 import com.moviehub.security.JwtService;
@@ -112,6 +113,25 @@ public class AuthService {
     public void logout(String rawRefreshToken) {
         refreshTokenRepository.findByTokenHashWithUser(hash(rawRefreshToken))
                 .ifPresent(token -> token.revoke(clock.instant()));
+    }
+
+    /**
+     * Changes the password, signs out every other session (all refresh tokens are revoked)
+     * and returns a fresh token pair so the current session continues.
+     */
+    @Transactional
+    public AuthResponse changePassword(long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadCredentialsException("Authentication required"));
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BadRequestException("New password must be different from the current one");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        refreshTokenRepository.revokeAllForUser(userId, clock.instant());
+        return issueTokens(userRepository.getReferenceById(userId));
     }
 
     private AuthResponse issueTokens(User user) {

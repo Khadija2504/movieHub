@@ -1,14 +1,15 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { Avatar } from '../../shared/components/avatar/avatar';
 import { Footer } from '../../shared/components/footer/footer';
 import { Navbar } from '../../shared/components/navbar/navbar';
 import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-user-layout',
-  imports: [RouterOutlet, Navbar, Sidebar, Footer],
+  imports: [RouterOutlet, Navbar, Sidebar, Footer, Avatar],
   template: `
     <div class="flex min-h-dvh flex-col">
       <app-navbar />
@@ -16,9 +17,7 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
         <aside class="lg:sticky lg:top-24 lg:h-fit lg:w-64 lg:shrink-0">
           @if (auth.user(); as user) {
             <div class="card mb-4 flex items-center gap-3 p-4">
-              <span class="grid size-12 shrink-0 place-items-center rounded-full bg-brand font-display font-bold shadow-glow">
-                {{ initials() }}
-              </span>
+              <app-avatar class="size-12 shadow-glow" [name]="user.firstName + ' ' + user.lastName" [url]="user.avatarUrl" />
               <div class="min-w-0">
                 <p class="truncate font-semibold">{{ user.firstName }} {{ user.lastName }}</p>
                 <p class="truncate text-xs text-muted">{{ user.email }}</p>
@@ -39,11 +38,6 @@ import { Sidebar, SidebarSection } from '../../shared/components/sidebar/sidebar
 })
 export class UserLayout {
   protected readonly auth = inject(AuthService);
-
-  protected readonly initials = computed(() => {
-    const u = this.auth.user();
-    return u ? `${u.firstName.charAt(0)}${u.lastName.charAt(0)}`.toUpperCase() : '';
-  });
 
   protected readonly sections: SidebarSection[] = [
     {

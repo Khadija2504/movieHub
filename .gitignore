@@ -11,3 +11,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Uploaded files (avatars)
+/storage/
+/MOVIEHUB/storage/
