@@ -110,6 +110,22 @@ export class AuthService {
     });
   }
 
+  /** Replaces the stored tokens and user (e.g. after a password change returns a new token pair). */
+  applySession(response: AuthResponse): User {
+    return this.startSession(response);
+  }
+
+  /** Updates the cached user after a profile change (name, avatar). */
+  updateUser(user: User): void {
+    this.currentUser.set(user);
+  }
+
+  /** Ends the session locally without calling the server (e.g. the account was just deleted). */
+  endSession(): void {
+    this.clearSession();
+    void this.router.navigateByUrl('/');
+  }
+
   private startSession(response: AuthResponse): User {
     this.storage.save(response.accessToken, response.refreshToken);
     this.currentUser.set(response.user);
