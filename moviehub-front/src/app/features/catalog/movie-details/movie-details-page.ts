@@ -13,7 +13,9 @@ import { Icon } from '../../../shared/components/icon/icon';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
 import { TrailerModal } from '../../../shared/components/trailer-modal/trailer-modal';
 import { RuntimePipe } from '../../../shared/pipes/runtime.pipe';
+import { WatchlistButton } from '../../../shared/components/watchlist-button/watchlist-button';
 import { CastRow } from '../components/cast-row';
+import { ReviewsSection } from '../components/reviews-section';
 import { DetailsSkeleton } from '../components/details-skeleton';
 import { InfoItem, InfoList } from '../components/info-list';
 import { HeroFact, TitleHero } from '../components/title-hero';
@@ -23,7 +25,7 @@ const languageNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
 @Component({
   selector: 'app-movie-details-page',
-  imports: [TitleHero, CastRow, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
+  imports: [TitleHero, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
   templateUrl: './movie-details-page.html',
 })
 export class MovieDetailsPage {

@@ -20,14 +20,16 @@ import { MediaCarousel } from '../../../shared/components/media-carousel/media-c
 import { TrailerModal } from '../../../shared/components/trailer-modal/trailer-modal';
 import { RuntimePipe } from '../../../shared/pipes/runtime.pipe';
 import { Icon } from '../../../shared/components/icon/icon';
+import { WatchlistButton } from '../../../shared/components/watchlist-button/watchlist-button';
 import { CastRow } from '../components/cast-row';
+import { ReviewsSection } from '../components/reviews-section';
 import { DetailsSkeleton } from '../components/details-skeleton';
 import { InfoItem, InfoList } from '../components/info-list';
 import { HeroFact, TitleHero } from '../components/title-hero';
 
 @Component({
   selector: 'app-series-details-page',
-  imports: [TitleHero, CastRow, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, RuntimePipe, Icon],
+  imports: [TitleHero, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, RuntimePipe, Icon],
   templateUrl: './series-details-page.html',
 })
 export class SeriesDetailsPage {
