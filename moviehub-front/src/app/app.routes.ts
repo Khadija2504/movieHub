@@ -76,6 +76,29 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/user/dashboard/dashboard-page').then((m) => m.DashboardPage),
       },
+      {
+        path: 'profile',
+        title: 'My Profile · MovieHub',
+        loadComponent: () => import('./features/user/profile/profile-page').then((m) => m.ProfilePage),
+      },
+      {
+        path: 'watchlist',
+        title: 'My Watchlist · MovieHub',
+        loadComponent: () =>
+          import('./features/user/watchlist/watchlist-page').then((m) => m.WatchlistPage),
+      },
+      {
+        path: 'reviews',
+        title: 'My Reviews · MovieHub',
+        loadComponent: () =>
+          import('./features/user/reviews/my-reviews-page').then((m) => m.MyReviewsPage),
+      },
+      {
+        path: 'settings',
+        title: 'Settings · MovieHub',
+        loadComponent: () =>
+          import('./features/user/settings/settings-page').then((m) => m.SettingsPage),
+      },
     ],
   },
   {

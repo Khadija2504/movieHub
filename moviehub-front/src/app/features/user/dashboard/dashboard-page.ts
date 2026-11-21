@@ -1,12 +1,14 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
 import { MediaSummary } from '../../../core/models/catalog';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import { WatchlistService } from '../../../core/services/watchlist.service';
 import { Icon, IconName } from '../../../shared/components/icon/icon';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
 
@@ -43,7 +45,7 @@ interface Stat {
           </span>
           <div class="flex-1">
             <p class="text-sm text-muted">{{ stat.label }}</p>
-            <p class="font-display text-2xl font-bold">0</p>
+            <p class="font-display text-2xl font-bold">{{ counts()[stat.label] ?? 0 }}</p>
           </div>
           <app-icon name="chevron-right" class="size-4 text-subtle transition-transform group-hover:translate-x-0.5" />
         </a>
@@ -92,6 +94,20 @@ export class DashboardPage {
     { label: 'Upcoming bookings', icon: 'ticket', link: '/account/bookings', tint: 'bg-accent/12 text-accent ring-accent/25' },
     { label: 'Reviews', icon: 'message', link: '/account/reviews', tint: 'bg-sky-500/12 text-sky-400 ring-sky-500/20' },
   ];
+
+  private readonly watchlist = inject(WatchlistService);
+  private readonly stats$ = toSignal(
+    inject(ProfileService)
+      .stats()
+      .pipe(catchError(() => of(null))),
+    { initialValue: null },
+  );
+
+  /** Watchlist count is live (updates as titles are added/removed); library and bookings come in later phases. */
+  protected readonly counts = computed<Partial<Record<string, number>>>(() => ({
+    Watchlist: this.watchlist.count(),
+    Reviews: this.stats$()?.reviewCount ?? 0,
+  }));
 
   protected readonly recommended = toSignal(
     inject(CatalogService)
