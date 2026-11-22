@@ -17,6 +17,11 @@
     [hasTrailer]="!!movie.trailer"
     (playTrailer)="trailerOpen.set(true)"
   >
+    @if (inCinemas()) {
+      <button type="button" class="btn btn-primary btn-lg" (click)="scrollToShowtimes()">
+        <app-icon name="ticket" class="size-5" /> Get tickets
+      </button>
+    }
     @if (movie.offer.inCatalog && movie.offer.streamable) {
       <button type="button" class="btn btn-primary btn-lg" disabled title="Streaming is coming soon">
         <app-icon name="play" filled class="size-4" /> Watch now
@@ -27,6 +32,7 @@
 
   <div class="container-page grid gap-10 lg:grid-cols-[1fr_22rem]">
     <div class="min-w-0">
+      <app-movie-showtimes [tmdbId]="movie.id" (available)="inCinemas.set($event)" />
       <app-cast-row [people]="movie.cast" />
       <app-info-list [items]="info()" />
       <app-reviews-section mediaType="MOVIE" [tmdbId]="movie.id" [title]="movie.title" />

@@ -1,0 +1,134 @@
+@if (state().error; as error) {
+  <div class="container-page page-top pb-16"><app-error-state [message]="error" (retry)="retry()" /></div>
+} @else if (state().loading) {
+  <div class="container-page page-top grid gap-8 md:grid-cols-[12rem_1fr]">
+    <div class="skeleton aspect-[2/3] w-40 rounded-2xl md:w-full"></div>
+    <div class="space-y-4">
+      <div class="skeleton h-4 w-40 rounded"></div>
+      <div class="skeleton h-12 w-3/4 rounded-xl"></div>
+      <div class="skeleton h-24 w-full rounded-2xl"></div>
+    </div>
+  </div>
+} @else if (state().data; as s) {
+  <!-- Hero -->
+  <section class="relative overflow-hidden border-b border-border">
+    @if (s.movie.backdropUrl) {
+      <img [src]="s.movie.backdropUrl" alt="" class="absolute inset-0 h-full w-full scale-105 object-cover opacity-30 blur-[2px]" aria-hidden="true" />
+    }
+    <div class="absolute inset-0 bg-linear-to-t from-background via-background/85 to-background/40" aria-hidden="true"></div>
+    <div class="absolute inset-0 bg-linear-to-r from-background/90 to-transparent" aria-hidden="true"></div>
+
+    <div class="container-page page-top relative grid gap-8 pb-10 md:grid-cols-[12rem_minmax(0,1fr)] md:items-end lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <a [routerLink]="['/movies', s.movie.tmdbId]" class="w-36 md:w-full">
+        @if (s.movie.posterUrl) {
+          <img [src]="s.movie.posterUrl" [alt]="s.movie.title" class="aspect-[2/3] w-full rounded-2xl object-cover shadow-2xl ring-1 ring-white/10" />
+        } @else {
+          <div class="grid aspect-[2/3] w-full place-items-center rounded-2xl bg-surface-raised text-subtle ring-1 ring-border"><app-icon name="film" class="size-8" /></div>
+        }
+      </a>
+
+      <div class="min-w-0">
+        <a [routerLink]="['/cinemas', s.cinema.id]" class="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground">
+          <app-icon name="clapperboard" class="size-4 text-primary" /> {{ s.cinema.name }}
+        </a>
+        <h1 class="mt-3 text-3xl leading-tight font-extrabold sm:text-5xl">{{ s.movie.title }}</h1>
+        <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted">
+          <span class="rounded-full px-3 py-1 text-xs font-semibold ring-1" [class]="badges[s.room.screenType]">{{ labels[s.room.screenType] }}</span>
+          <span class="chip pointer-events-none">{{ s.format === 'THREE_D' ? '3D' : '2D' }}</span>
+          @if (s.movie.runtime) {
+            <span class="flex items-center gap-1"><app-icon name="clock" class="size-4" /> {{ s.movie.runtime | runtime }}</span>
+          }
+          @if (s.movie.rating) {
+            <span class="flex items-center gap-1 text-accent"><app-icon name="star" filled class="size-4" /> {{ s.movie.rating }}</span>
+          }
+          <a [routerLink]="['/movies', s.movie.tmdbId]" class="font-medium text-foreground underline-offset-4 hover:underline">Movie details</a>
+        </div>
+
+        <dl class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          @for (fact of facts(); track fact.label) {
+            <div class="glass flex items-center gap-3 rounded-2xl px-4 py-3">
+              <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20"><app-icon [name]="fact.icon" class="size-5" /></span>
+              <div class="min-w-0">
+                <dt class="text-xs text-subtle">{{ fact.label }}</dt>
+                <dd class="truncate text-sm font-semibold" [title]="fact.value">{{ fact.value }}</dd>
+              </div>
+            </div>
+          }
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <div class="container-page grid gap-8 pt-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <!-- Seat map -->
+    <section class="card min-w-0 p-5 sm:p-8" aria-labelledby="seats-heading">
+      <div class="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="seats-heading" class="section-title">Seats</h2>
+          <p class="mt-0.5 text-sm text-muted">{{ s.room.name }} · {{ s.room.capacity }} seats</p>
+        </div>
+        @if (seats().data; as map) {
+          <p class="rounded-full bg-success/12 px-3 py-1 text-sm font-medium text-success ring-1 ring-success/25">
+            {{ map.available }} of {{ map.capacity }} available
+          </p>
+        }
+      </div>
+      @if (seats().error; as error) {
+        <app-error-state [message]="error" (retry)="retry()" compact />
+      } @else if (seats().data; as map) {
+        <app-seat-map [map]="map" />
+      } @else {
+        <div class="skeleton mx-auto h-64 w-full max-w-xl rounded-2xl"></div>
+      }
+    </section>
+
+    <!-- Tickets -->
+    <aside class="space-y-5 lg:sticky lg:top-24 lg:h-fit">
+      <div class="card overflow-hidden">
+        <div class="border-b border-border bg-linear-to-r from-primary/10 to-transparent px-6 py-4">
+          <h3 class="font-display text-base font-semibold">Tickets</h3>
+          <p class="mt-0.5 text-xs text-muted">Price per seat</p>
+        </div>
+        <ul class="divide-y divide-border">
+          <li class="flex items-center gap-4 px-6 py-4">
+            <span class="size-4 rounded-t-md rounded-b-sm bg-white/25"></span>
+            <span class="flex-1 text-sm font-medium">Standard</span>
+            <span class="font-display font-bold">{{ s.price | currency: currency }}</span>
+          </li>
+          <li class="flex items-center gap-4 px-6 py-4">
+            <span class="size-4 rounded-t-md rounded-b-sm bg-accent/70"></span>
+            <div class="flex-1">
+              <p class="text-sm font-medium">VIP</p>
+              <p class="text-xs text-muted">Premium seats with the best view</p>
+            </div>
+            <span class="font-display font-bold">{{ s.vipPrice | currency: currency }}</span>
+          </li>
+          <li class="flex items-center gap-4 px-6 py-4">
+            <span class="size-4 rounded-t-md rounded-b-sm bg-sky-400/80"></span>
+            <span class="flex-1 text-sm font-medium">Wheelchair space</span>
+            <span class="font-display font-bold">{{ s.price | currency: currency }}</span>
+          </li>
+        </ul>
+        <div class="border-t border-border p-6">
+          @if (unavailableReason(); as reason) {
+            <p class="flex items-start gap-2 text-sm text-muted"><app-icon name="info" class="mt-0.5 size-4 shrink-0" /> {{ reason }}</p>
+            <a [routerLink]="['/cinemas', s.cinema.id]" class="btn btn-secondary mt-4 w-full">See other showtimes</a>
+          } @else {
+            <button type="button" class="btn btn-primary btn-lg w-full" disabled>
+              <app-icon name="ticket" class="size-5" /> Choose seats
+            </button>
+            <p class="mt-3 text-center text-xs text-subtle">Online booking opens soon.</p>
+          }
+        </div>
+      </div>
+
+      <div class="card flex gap-3 p-5 text-sm text-muted">
+        <app-icon name="map-pin" class="mt-0.5 size-5 shrink-0 text-primary" />
+        <div>
+          <a [routerLink]="['/cinemas', s.cinema.id]" class="font-semibold text-foreground hover:text-primary">{{ s.cinema.name }}</a>
+          <p class="mt-0.5">{{ s.cinema.address }}, {{ s.cinema.city }}</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+}

@@ -50,6 +50,22 @@ export const routes: Routes = [
         loadComponent: () => import('./features/catalog/search/search-page').then((m) => m.SearchPage),
       },
       {
+        path: 'cinemas',
+        title: 'Cinemas · MovieHub',
+        loadComponent: () => import('./features/cinemas/list/cinemas-page').then((m) => m.CinemasPage),
+      },
+      {
+        path: 'cinemas/:id',
+        title: 'Cinema · MovieHub',
+        loadComponent: () =>
+          import('./features/cinemas/details/cinema-details-page').then((m) => m.CinemaDetailsPage),
+      },
+      {
+        path: 'screenings/:id',
+        title: 'Screening · MovieHub',
+        loadComponent: () => import('./features/cinemas/screening/screening-page').then((m) => m.ScreeningPage),
+      },
+      {
         path: 'login',
         title: 'Log in · MovieHub',
         canActivate: [guestGuard],

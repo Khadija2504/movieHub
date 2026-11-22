@@ -66,6 +66,8 @@ app:
   storage:
     # Uploaded files (avatars). Relative paths are resolved from the working directory.
     dir: ${STORAGE_DIR:./storage}
+  # Development only: create demo cinemas and fill the next 7 days with screenings of movies in theatres.
+  demo-data: ${DEMO_DATA:false}
   admin:
     email: ${ADMIN_EMAIL:admin@moviehub.dev}
     password: ${ADMIN_PASSWORD:}
