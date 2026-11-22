@@ -14,6 +14,7 @@ import { MediaCarousel } from '../../../shared/components/media-carousel/media-c
 import { TrailerModal } from '../../../shared/components/trailer-modal/trailer-modal';
 import { RuntimePipe } from '../../../shared/pipes/runtime.pipe';
 import { WatchlistButton } from '../../../shared/components/watchlist-button/watchlist-button';
+import { MovieShowtimes } from '../../cinemas/components/movie-showtimes';
 import { CastRow } from '../components/cast-row';
 import { ReviewsSection } from '../components/reviews-section';
 import { DetailsSkeleton } from '../components/details-skeleton';
@@ -25,7 +26,7 @@ const languageNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
 @Component({
   selector: 'app-movie-details-page',
-  imports: [TitleHero, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
+  imports: [TitleHero, MovieShowtimes, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
   templateUrl: './movie-details-page.html',
 })
 export class MovieDetailsPage {
@@ -36,6 +37,8 @@ export class MovieDetailsPage {
 
   protected readonly currency = environment.currency;
   protected readonly trailerOpen = signal(false);
+  /** Set by the showtimes section: the movie has upcoming screenings. */
+  protected readonly inCinemas = signal(false);
   private readonly attempt = signal(0);
 
   protected readonly state = toSignal(
@@ -78,6 +81,10 @@ export class MovieDetailsPage {
 
   protected retry(): void {
     this.attempt.update((n) => n + 1);
+  }
+
+  protected scrollToShowtimes(): void {
+    document.getElementById('showtimes')?.scrollIntoView({ behavior: 'smooth' });
   }
 }
 

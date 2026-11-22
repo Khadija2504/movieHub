@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
 import { Genre, MediaSummary } from '../../../core/models/catalog';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { CinemaService } from '../../../core/services/cinema.service';
 import { Icon } from '../../../shared/components/icon/icon';
 import { MediaCard } from '../../../shared/components/media-card/media-card';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
@@ -40,6 +41,12 @@ export class HomePage {
   protected readonly popularMovies = this.row(() => this.catalog.browse('MOVIE', { sort: 'POPULAR' }));
   protected readonly popularSeries = this.row(() => this.catalog.browse('SERIES', { sort: 'POPULAR' }));
   protected readonly topRatedMovies = this.row(() => this.catalog.browse('MOVIE', { sort: 'TOP_RATED' }));
+
+  /** Movies with upcoming screenings (row hidden when there are none). */
+  protected readonly nowShowing = toSignal(
+    inject(CinemaService).nowShowing().pipe(catchError(() => of<MediaSummary[]>([]))),
+    { initialValue: [] as MediaSummary[] },
+  );
 
   protected readonly genres = toSignal(
     this.catalog.genres('MOVIE').pipe(catchError(() => of<Genre[]>([]))),
