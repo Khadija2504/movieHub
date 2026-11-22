@@ -1,0 +1,141 @@
+@if (cinema().error; as error) {
+  <div class="container-page page-top pb-16"><app-error-state [message]="error" (retry)="retry()" /></div>
+} @else if (cinema().loading) {
+  <div class="container-page page-top">
+    <div class="skeleton h-4 w-32 rounded"></div>
+    <div class="skeleton mt-4 h-12 w-2/3 rounded-xl"></div>
+    <div class="skeleton mt-4 h-5 w-1/2 rounded"></div>
+    <div class="skeleton mt-10 h-24 w-full rounded-2xl"></div>
+  </div>
+} @else if (cinema().data; as c) {
+  <!-- Header -->
+  <section class="relative overflow-hidden border-b border-border">
+    <div class="pointer-events-none absolute -top-40 -left-20 h-96 w-[50rem] rounded-full bg-primary/15 blur-[120px]" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute -right-20 -bottom-40 size-96 rounded-full bg-ember/10 blur-[120px]" aria-hidden="true"></div>
+
+    <div class="container-page page-top relative grid gap-8 pb-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-end">
+      <div>
+        <a routerLink="/cinemas" class="inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground">
+          <app-icon name="chevron-left" class="size-4" /> All cinemas
+        </a>
+        <h1 class="mt-4 text-4xl leading-tight font-extrabold sm:text-5xl">{{ c.name }}</h1>
+        <p class="mt-3 flex items-start gap-2 text-muted">
+          <app-icon name="map-pin" class="mt-0.5 size-5 shrink-0 text-primary" />
+          {{ c.address }}, {{ c.postalCode ? c.postalCode + ' ' : '' }}{{ c.city }}
+        </p>
+        @if (c.description) {
+          <p class="mt-4 max-w-2xl leading-relaxed text-muted">{{ c.description }}</p>
+        }
+
+        <div class="mt-6 flex flex-wrap items-center gap-2">
+          @for (type of screenTypes(); track type) {
+            <span class="rounded-full px-3 py-1 text-xs font-semibold ring-1" [class]="badges[type]">{{ labels[type] }}</span>
+          }
+          <span class="chip pointer-events-none"><app-icon name="seat" class="size-3.5" /> {{ c.rooms.length }} {{ c.rooms.length === 1 ? 'screen' : 'screens' }} · {{ seatCount() }} seats</span>
+          @if (c.phone) {
+            <a [href]="'tel:' + c.phone.replaceAll(' ', '')" class="chip">{{ c.phone }}</a>
+          }
+        </div>
+      </div>
+
+      @if (markers().length) {
+        <div>
+          <app-cinema-map class="h-52" [markers]="markers()" [zoom]="15" />
+          @if (directions(); as link) {
+            <a [href]="link" target="_blank" rel="noopener" class="btn btn-secondary btn-sm mt-3 w-full">
+              <app-icon name="map-pin" class="size-4" /> Open in OpenStreetMap
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Date picker -->
+  <div class="glass sticky top-16 z-30 border-x-0! border-t-0! lg:top-[4.5rem]">
+    <div class="container-page flex flex-wrap items-center gap-4 py-3">
+      @if (lastSchedule(); as s) {
+        @if (s.dates.length) {
+          <app-date-strip class="min-w-0 flex-1" [dates]="s.dates" [selected]="date() ?? s.date" [timeZone]="c.timeZone" (select)="selectDate($event)" />
+        }
+      } @else if (schedule().loading) {
+        <div class="flex gap-2">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="skeleton h-[4.6rem] w-[4.25rem] rounded-2xl"></div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Showtimes -->
+  <section class="container-page pt-10" aria-labelledby="showtimes-heading">
+    @if (schedule().error; as error) {
+      <app-error-state [message]="error" (retry)="retry()" />
+    } @else if (schedule().data; as s) {
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-2">
+        <h2 id="showtimes-heading" class="section-title">{{ longDate(s.date) }}</h2>
+        @if (s.movies.length) {
+          <p class="text-sm text-muted">{{ s.movies.length }} {{ s.movies.length === 1 ? 'movie' : 'movies' }} showing</p>
+        }
+      </div>
+
+      <div class="space-y-4">
+        @for (entry of s.movies; track entry.movie.tmdbId; let i = $index) {
+          <article class="card flex animate-fade-up gap-4 p-4 sm:gap-6 sm:p-5" [style.animation-delay.ms]="i * 50">
+            <a [routerLink]="['/movies', entry.movie.tmdbId]" class="w-20 shrink-0 sm:w-28">
+              @if (entry.movie.posterUrl) {
+                <img [src]="entry.movie.posterUrl" [alt]="entry.movie.title" class="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-border" loading="lazy" />
+              } @else {
+                <div class="grid aspect-[2/3] w-full place-items-center rounded-xl bg-surface-raised text-subtle ring-1 ring-border"><app-icon name="film" class="size-6" /></div>
+              }
+            </a>
+            <div class="min-w-0 flex-1">
+              <a [routerLink]="['/movies', entry.movie.tmdbId]" class="font-display text-lg leading-snug font-bold hover:text-primary sm:text-xl">{{ entry.movie.title }}</a>
+              <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+                @if (entry.movie.year) {
+                  <span>{{ entry.movie.year }}</span>
+                }
+                @if (entry.movie.runtime) {
+                  <span class="flex items-center gap-1"><app-icon name="clock" class="size-3.5" /> {{ entry.movie.runtime | runtime }}</span>
+                }
+                @if (entry.movie.rating) {
+                  <span class="flex items-center gap-1 text-accent"><app-icon name="star" filled class="size-3.5" /> {{ entry.movie.rating }}</span>
+                }
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                @for (showtime of entry.showtimes; track showtime.id) {
+                  <app-showtime-chip [showtime]="showtime" />
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="card flex flex-col items-center px-6 py-16 text-center">
+            <span class="grid size-14 place-items-center rounded-2xl bg-white/5 text-muted ring-1 ring-border"><app-icon name="calendar" class="size-6" /></span>
+            <p class="mt-4 font-display font-semibold">No showtimes on this day</p>
+            <p class="mt-1 max-w-sm text-sm text-muted">
+              {{ s.dates.length ? 'Pick another day above to see what’s on.' : 'The programme for the coming days hasn’t been published yet.' }}
+            </p>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="space-y-4">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="card flex gap-6 p-5">
+            <div class="skeleton aspect-[2/3] w-28 rounded-xl"></div>
+            <div class="flex-1 space-y-3">
+              <div class="skeleton h-6 w-1/2 rounded"></div>
+              <div class="skeleton h-4 w-1/3 rounded"></div>
+              <div class="flex gap-2 pt-2">
+                <div class="skeleton h-16 w-28 rounded-xl"></div>
+                <div class="skeleton h-16 w-28 rounded-xl"></div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
