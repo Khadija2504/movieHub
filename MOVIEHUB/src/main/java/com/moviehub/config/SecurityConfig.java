@@ -55,7 +55,10 @@ public class SecurityConfig {
             "/api/genres",
             "/api/reviews/*/*",
             "/api/reviews/*/*/summary",
-            "/api/files/**"
+            "/api/files/**",
+            "/api/cinemas/**",
+            "/api/cinemas",
+            "/api/screenings/**"
     };
 
     @Bean
