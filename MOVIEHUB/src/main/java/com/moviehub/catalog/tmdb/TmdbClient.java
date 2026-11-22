@@ -69,6 +69,12 @@ public class TmdbClient {
         return get("/trending/" + type + "/" + window, Map.of("page", page), MEDIA_PAGE);
     }
 
+    /** Movies currently in theatres (used to seed demo screenings). */
+    @Cacheable
+    public Page<MediaItem> nowPlaying(int page) {
+        return get("/movie/now_playing", Map.of("page", page), MEDIA_PAGE);
+    }
+
     @Cacheable
     public Page<MediaItem> searchMulti(String query, int page) {
         return get("/search/multi", Map.of("query", query, "page", page, "include_adult", false), MEDIA_PAGE);
