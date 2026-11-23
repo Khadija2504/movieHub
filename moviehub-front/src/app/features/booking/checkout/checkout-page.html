@@ -1,0 +1,128 @@
+<div class="container-page page-top pb-16">
+  <!-- Steps -->
+  <ol class="mb-8 flex flex-wrap items-center gap-2 text-xs font-medium text-muted sm:text-sm" aria-label="Booking steps">
+    <li class="flex items-center gap-2"><span class="grid size-6 place-items-center rounded-full bg-success/15 text-success"><app-icon name="check" class="size-3.5" /></span> Seats</li>
+    <li aria-hidden="true" class="h-px w-6 bg-border sm:w-10"></li>
+    <li class="flex items-center gap-2 text-foreground" aria-current="step"><span class="grid size-6 place-items-center rounded-full bg-brand text-white">2</span> Payment</li>
+    <li aria-hidden="true" class="h-px w-6 bg-border sm:w-10"></li>
+    <li class="flex items-center gap-2"><span class="grid size-6 place-items-center rounded-full bg-white/5 ring-1 ring-border">3</span> Ticket</li>
+  </ol>
+
+  @switch (phase()) {
+    @case ('loading') {
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div class="skeleton h-96 rounded-[1.5rem]"></div>
+        <div class="skeleton h-96 rounded-[1.5rem]"></div>
+      </div>
+    }
+    @case ('error') {
+      <app-error-state [message]="error() ?? 'Something went wrong.'" (retry)="retry()" />
+    }
+    @case ('expired') {
+      @let b = booking();
+      <div class="card mx-auto flex max-w-lg flex-col items-center px-6 py-14 text-center">
+        <span class="grid size-16 place-items-center rounded-2xl bg-warning/12 text-warning ring-1 ring-warning/25"><app-icon name="clock" class="size-7" /></span>
+        @if (b?.status === 'CANCELLED') {
+          <h1 class="mt-5 font-display text-2xl font-bold">This booking was cancelled</h1>
+          <p class="mt-2 text-muted">The seats have been released.</p>
+        } @else {
+          <h1 class="mt-5 font-display text-2xl font-bold">Your seat hold has expired</h1>
+          <p class="mt-2 text-muted">Seats are held for 10 minutes. You have not been charged; pick your seats again to book.</p>
+        }
+        @if (b) {
+          <a [routerLink]="['/screenings', b.screening.id]" class="btn btn-primary mt-8"><app-icon name="seat" class="size-4" /> Choose seats again</a>
+        }
+      </div>
+    }
+    @default {
+      @let b = booking()!;
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <!-- Payment -->
+        <section class="card min-w-0 p-5 sm:p-8" aria-labelledby="pay-heading">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 id="pay-heading" class="text-2xl font-extrabold sm:text-3xl">Payment</h1>
+              <p class="mt-1 text-sm text-muted">Booking <span class="font-mono font-semibold text-foreground">{{ b.reference }}</span></p>
+            </div>
+            @if (phase() === 'ready' || phase() === 'paying') {
+              <div
+                class="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 transition-colors"
+                [class]="hurry() ? 'bg-danger/12 text-danger ring-danger/25' : 'bg-white/5 text-foreground ring-border'"
+                role="timer"
+                [attr.aria-label]="'Seats held for ' + timeLeft()"
+              >
+                <app-icon name="clock" class="size-4" /> Seats held for <span class="w-10 font-mono tabular-nums">{{ timeLeft() }}</span>
+              </div>
+            }
+          </div>
+
+          @if (phase() === 'processing') {
+            <div class="mt-10 flex flex-col items-center py-10 text-center">
+              <span class="size-12 animate-spin rounded-full border-4 border-white/10 border-t-primary" aria-hidden="true"></span>
+              <p class="mt-6 font-display text-lg font-semibold">Your payment is being processed</p>
+              <p class="mt-1 max-w-sm text-sm text-muted">This can take a moment. Your seats stay reserved; your ticket will appear in My bookings as soon as the payment is approved.</p>
+              <a routerLink="/account/bookings" class="btn btn-secondary mt-6">Go to My bookings</a>
+            </div>
+          } @else {
+            @if (session()?.provider === 'DEMO') {
+              <div class="mt-8 flex gap-3 rounded-2xl bg-sky-500/10 p-4 text-sm text-sky-200 ring-1 ring-sky-500/20">
+                <app-icon name="info" class="mt-0.5 size-5 shrink-0" />
+                <p><strong class="font-semibold">Demo payment.</strong> Online payments are not configured on this server, so no card is charged. Press Pay to confirm your booking.</p>
+              </div>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2" aria-hidden="true">
+                <div class="sm:col-span-2">
+                  <span class="label">Card number</span>
+                  <div class="input flex items-center justify-between text-muted"><span class="font-mono">4242 4242 4242 4242</span><app-icon name="card" class="size-5" /></div>
+                </div>
+                <div><span class="label">Expiry</span><div class="input flex items-center font-mono text-muted">12 / 34</div></div>
+                <div><span class="label">CVC</span><div class="input flex items-center font-mono text-muted">123</div></div>
+              </div>
+            } @else if (session()?.provider === 'STRIPE') {
+              <div class="mt-8">
+                @if (!stripeReady()) {
+                  <div class="space-y-3" aria-hidden="true">
+                    <div class="skeleton h-12 rounded-xl"></div>
+                    <div class="grid grid-cols-2 gap-3"><div class="skeleton h-12 rounded-xl"></div><div class="skeleton h-12 rounded-xl"></div></div>
+                  </div>
+                }
+                <div #stripeHost></div>
+              </div>
+              <p class="mt-4 flex items-center gap-1.5 text-xs text-subtle"><app-icon name="lock" class="size-3.5" /> Payments are processed securely by Stripe. MovieHub never sees your card number.</p>
+            }
+
+            @if (paymentError(); as message) {
+              <p class="mt-6 flex items-start gap-2 rounded-xl bg-danger/10 p-3 text-sm text-danger ring-1 ring-danger/25" role="alert">
+                <app-icon name="alert" class="mt-0.5 size-4 shrink-0" /> {{ message }}
+              </p>
+            }
+
+            <button
+              type="button"
+              class="btn btn-primary btn-lg mt-8 w-full"
+              [disabled]="phase() !== 'ready' || (session()?.provider === 'STRIPE' && !stripeReady())"
+              (click)="pay()"
+            >
+              @if (phase() === 'paying') {
+                <span class="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span> Processing…
+              } @else {
+                <app-icon name="lock" class="size-5" /> Pay {{ b.total | currency: b.currency }}
+              }
+            </button>
+            <button type="button" class="btn btn-ghost mt-3 w-full text-muted" [disabled]="cancelling() || phase() === 'paying'" (click)="cancel()">
+              Cancel and release my seats
+            </button>
+          }
+        </section>
+
+        <!-- Order summary -->
+        <aside class="card p-5 sm:p-6 lg:sticky lg:top-24" aria-label="Order summary">
+          <h2 class="mb-5 font-display text-base font-semibold">Order summary</h2>
+          <app-booking-summary [booking]="b" />
+          <p class="mt-5 flex items-start gap-2 text-xs text-subtle">
+            <app-icon name="info" class="mt-0.5 size-3.5 shrink-0" /> Free cancellation up to 2 hours before the screening.
+          </p>
+        </aside>
+      </div>
+    }
+  }
+</div>
