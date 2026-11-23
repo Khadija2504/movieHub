@@ -66,6 +66,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/cinemas/screening/screening-page').then((m) => m.ScreeningPage),
       },
       {
+        path: 'checkout/:id',
+        title: 'Checkout · MovieHub',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/booking/checkout/checkout-page').then((m) => m.CheckoutPage),
+      },
+      {
         path: 'login',
         title: 'Log in · MovieHub',
         canActivate: [guestGuard],
@@ -108,6 +114,18 @@ export const routes: Routes = [
         title: 'My Reviews · MovieHub',
         loadComponent: () =>
           import('./features/user/reviews/my-reviews-page').then((m) => m.MyReviewsPage),
+      },
+      {
+        path: 'bookings',
+        title: 'My Bookings · MovieHub',
+        loadComponent: () =>
+          import('./features/user/bookings/my-bookings-page').then((m) => m.MyBookingsPage),
+      },
+      {
+        path: 'bookings/:id',
+        title: 'Ticket · MovieHub',
+        loadComponent: () =>
+          import('./features/user/bookings/booking-details-page').then((m) => m.BookingDetailsPage),
       },
       {
         path: 'settings',

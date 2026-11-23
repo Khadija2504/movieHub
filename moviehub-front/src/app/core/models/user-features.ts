@@ -53,6 +53,8 @@ export interface ReviewRequest {
 export interface UserStats {
   watchlistCount: number;
   reviewCount: number;
+  /** Confirmed cinema bookings of screenings that have not started. */
+  upcomingBookingCount: number;
 }
 
 export const MAX_REVIEW_LENGTH = 2000;
