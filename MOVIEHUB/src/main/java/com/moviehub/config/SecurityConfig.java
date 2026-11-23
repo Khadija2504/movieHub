@@ -43,6 +43,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**",
+            // Called by Stripe; authenticated by its signature instead.
+            "/api/payments/stripe/webhook",
             "/error"
     };
 

@@ -7,9 +7,12 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import com.moviehub.catalog.Movie;
+
+import jakarta.persistence.LockModeType;
 
 public interface ScreeningRepository extends JpaRepository<Screening, Long> {
 
@@ -54,6 +57,13 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
     @EntityGraph(attributePaths = {"movie", "room", "room.cinema"})
     @Query("select s from Screening s where s.id = :id")
     Optional<Screening> findDetailedById(long id);
+
+    /** Locks the screening row: bookings of one screening are made one at a time. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select s from Screening s join fetch s.movie join fetch s.room r join fetch r.cinema
+            where s.id = :id""")
+    Optional<Screening> findByIdForUpdate(long id);
 
     /** All screenings (any status) of a cinema starting in [from, to), for the admin. */
     @EntityGraph(attributePaths = {"movie", "room", "room.cinema"})

@@ -103,10 +103,11 @@ export class DashboardPage {
     { initialValue: null },
   );
 
-  /** Watchlist count is live (updates as titles are added/removed); library and bookings come in later phases. */
+  /** Watchlist count is live (updates as titles are added/removed); the library comes in a later phase. */
   protected readonly counts = computed<Partial<Record<string, number>>>(() => ({
     Watchlist: this.watchlist.count(),
     Reviews: this.stats$()?.reviewCount ?? 0,
+    'Upcoming bookings': this.stats$()?.upcomingBookingCount ?? 0,
   }));
 
   protected readonly recommended = toSignal(

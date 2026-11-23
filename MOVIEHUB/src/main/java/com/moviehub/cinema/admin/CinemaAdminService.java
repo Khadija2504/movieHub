@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.moviehub.booking.BookingService;
 import com.moviehub.catalog.Movie;
 import com.moviehub.catalog.MovieRepository;
 import com.moviehub.catalog.admin.CatalogAdminService;
@@ -55,6 +56,7 @@ public class CinemaAdminService {
     private final MovieRepository movieRepository;
     private final CatalogAdminService catalogAdminService;
     private final CinemaMapper mapper;
+    private final BookingService bookingService;
     private final Clock clock = Clock.systemUTC();
 
     // ---------------------------------------------------------------- cinemas
@@ -210,6 +212,8 @@ public class CinemaAdminService {
             throw new BadRequestException("A screening that has already started cannot be cancelled");
         }
         screening.setStatus(Screening.Status.CANCELLED);
+        // Customers' bookings are cancelled and refunded.
+        bookingService.cancelForScreening(screening.getId());
         return toAdmin(screening);
     }
 

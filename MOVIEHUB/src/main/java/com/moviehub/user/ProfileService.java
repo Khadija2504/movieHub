@@ -1,5 +1,7 @@
 package com.moviehub.user;
 
+import java.time.Instant;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,6 +9,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.moviehub.booking.BookingRepository;
 import com.moviehub.common.exception.BadRequestException;
 import com.moviehub.common.exception.ResourceNotFoundException;
 import com.moviehub.review.ReviewRepository;
@@ -29,6 +32,7 @@ public class ProfileService {
     private final PasswordEncoder passwordEncoder;
     private final WatchlistRepository watchlistRepository;
     private final ReviewRepository reviewRepository;
+    private final BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
     public UserResponse get(long userId) {
@@ -64,7 +68,8 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public UserStats stats(long userId) {
-        return new UserStats(watchlistRepository.countByUserId(userId), reviewRepository.countByUserId(userId));
+        return new UserStats(watchlistRepository.countByUserId(userId), reviewRepository.countByUserId(userId),
+                bookingRepository.countUpcomingConfirmed(userId, Instant.now()));
     }
 
     /** Permanently deletes the account; watchlist, reviews and sessions go with it (ON DELETE CASCADE). */

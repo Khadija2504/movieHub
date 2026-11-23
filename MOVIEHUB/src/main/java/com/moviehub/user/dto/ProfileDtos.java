@@ -32,6 +32,7 @@ public final class ProfileDtos {
     public record DeleteAccountRequest(@NotBlank(message = "Password is required") String password) {
     }
 
-    public record UserStats(long watchlistCount, long reviewCount) {
+    /** @param upcomingBookingCount confirmed cinema bookings of screenings that have not started */
+    public record UserStats(long watchlistCount, long reviewCount, long upcomingBookingCount) {
     }
 }
