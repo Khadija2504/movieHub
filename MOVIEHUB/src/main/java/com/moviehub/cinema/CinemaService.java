@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.moviehub.booking.BookingSeatRepository;
 import com.moviehub.catalog.dto.CatalogDtos.MediaSummary;
 import com.moviehub.cinema.CinemaDtos.CinemaDetails;
 import com.moviehub.cinema.CinemaDtos.CinemaSchedule;
@@ -43,6 +45,7 @@ public class CinemaService {
     private final CinemaRepository cinemaRepository;
     private final ScreeningRepository screeningRepository;
     private final SeatRepository seatRepository;
+    private final BookingSeatRepository bookingSeatRepository;
     private final CinemaMapper mapper;
     private final Clock clock = Clock.systemUTC();
 
@@ -77,11 +80,12 @@ public class CinemaService {
         List<LocalDate> dates = upcoming.stream().map(CinemaService::localDate).distinct().sorted().toList();
         LocalDate selected = date != null ? date : dates.isEmpty() ? today : dates.get(0);
 
-        Map<Long, List<Screening>> byMovie = groupBy(
-                upcoming.stream().filter(s -> localDate(s).equals(selected)).toList(), s -> s.getMovie().getId());
+        List<Screening> ofDay = upcoming.stream().filter(s -> localDate(s).equals(selected)).toList();
+        Map<Long, Integer> taken = takenSeats(ofDay);
+        Map<Long, List<Screening>> byMovie = groupBy(ofDay, s -> s.getMovie().getId());
         List<MovieShowtimes> movies = byMovie.values().stream()
                 .map(list -> new MovieShowtimes(mapper.toMovie(list.get(0).getMovie()),
-                        list.stream().map(this::toShowtime).toList()))
+                        list.stream().map(s -> toShowtime(s, taken)).toList()))
                 // Most programmed movies first, then alphabetical.
                 .sorted(Comparator.<MovieShowtimes>comparingInt(m -> -m.showtimes().size())
                         .thenComparing(m -> m.movie().title(), String.CASE_INSENSITIVE_ORDER))
@@ -119,12 +123,12 @@ public class CinemaService {
         LocalDate selected = date != null ? date : dates.isEmpty() ? LocalDate.ofInstant(now, clock.getZone())
                 : dates.get(0);
 
-        Map<Long, List<Screening>> byCinema = groupBy(
-                upcoming.stream().filter(s -> localDate(s).equals(selected)).toList(),
-                s -> s.getRoom().getCinema().getId());
+        List<Screening> ofDay = upcoming.stream().filter(s -> localDate(s).equals(selected)).toList();
+        Map<Long, Integer> taken = takenSeats(ofDay);
+        Map<Long, List<Screening>> byCinema = groupBy(ofDay, s -> s.getRoom().getCinema().getId());
         List<CinemaShowtimes> cinemas = byCinema.values().stream()
                 .map(list -> new CinemaShowtimes(mapper.toRef(list.get(0).getRoom().getCinema()),
-                        list.stream().map(this::toShowtime).toList()))
+                        list.stream().map(s -> toShowtime(s, taken)).toList()))
                 .sorted(Comparator.comparing((CinemaShowtimes c) -> c.cinema().city(), String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(c -> c.cinema().name(), String.CASE_INSENSITIVE_ORDER))
                 .toList();
@@ -142,10 +146,12 @@ public class CinemaService {
     public SeatMap seats(long screeningId) {
         Screening screening = visibleScreening(screeningId);
         Room room = screening.getRoom();
-        // Bookings arrive in Phase 5: until then every seat is available.
+        // Held (being paid) and sold seats are both TAKEN.
+        Set<Long> taken = bookingSeatRepository.findTakenSeatIds(screening.getId());
         List<SeatView> seats = seatRepository.findByRoomIdOrderByGridRowAscGridColumnAsc(room.getId()).stream()
                 .map(seat -> new SeatView(seat.getId(), seat.label(), seat.getRowLabel(), seat.getNumber(),
-                        seat.getGridRow(), seat.getGridColumn(), seat.getType(), SeatStatus.AVAILABLE))
+                        seat.getGridRow(), seat.getGridColumn(), seat.getType(),
+                        taken.contains(seat.getId()) ? SeatStatus.TAKEN : SeatStatus.AVAILABLE))
                 .toList();
         int available = (int) seats.stream().filter(s -> s.status() == SeatStatus.AVAILABLE).count();
         return new SeatMap(screening.getId(), room.getRowCount(), room.getColumnCount(), room.getCapacity(),
@@ -166,9 +172,12 @@ public class CinemaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Screening", id));
     }
 
-    private CinemaDtos.Showtime toShowtime(Screening s) {
-        // Bookings arrive in Phase 5: until then every seat is free.
-        return mapper.toShowtime(s, s.getRoom().getCapacity());
+    private Map<Long, Integer> takenSeats(List<Screening> screenings) {
+        return bookingSeatRepository.countTaken(screenings.stream().map(Screening::getId).toList());
+    }
+
+    private CinemaDtos.Showtime toShowtime(Screening s, Map<Long, Integer> taken) {
+        return mapper.toShowtime(s, Math.max(0, s.getRoom().getCapacity() - taken.getOrDefault(s.getId(), 0)));
     }
 
     private static LocalDate localDate(Screening s) {
