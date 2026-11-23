@@ -66,6 +66,20 @@ app:
   storage:
     # Uploaded files (avatars). Relative paths are resolved from the working directory.
     dir: ${STORAGE_DIR:./storage}
+  # Cinema ticket payments. Without Stripe keys, a demo payment is used (no real charge).
+  payments:
+    currency: EUR
+    stripe:
+      secret-key: ${STRIPE_SECRET_KEY:}
+      publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+      webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+      api-url: https://api.stripe.com
+  tickets:
+    # Signs ticket QR codes. Empty = derived from JWT_SECRET.
+    secret: ${TICKET_SECRET:}
+  bookings:
+    # Releases unpaid seat holds every 30 seconds.
+    expiry-job: true
   # Development only: create demo cinemas and fill the next 7 days with screenings of movies in theatres.
   demo-data: ${DEMO_DATA:false}
   admin:

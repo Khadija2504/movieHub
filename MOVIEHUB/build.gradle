@@ -21,6 +21,7 @@ ext {
 	jjwtVersion = '0.12.6'
 	mapstructVersion = '1.6.3'
 	springdocVersion = '3.0.0'
+	zxingVersion = '3.5.3'
 }
 
 dependencies {
@@ -44,6 +45,10 @@ dependencies {
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
 	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
 	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+	// QR codes on cinema tickets
+	implementation "com.google.zxing:core:${zxingVersion}"
+	implementation "com.google.zxing:javase:${zxingVersion}"
 
 	// API docs (Swagger UI at /swagger-ui.html)
 	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
