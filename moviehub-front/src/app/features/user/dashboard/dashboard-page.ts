@@ -7,7 +7,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
 import { MediaSummary } from '../../../core/models/catalog';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { WatchedMovie } from '../../../core/models/streaming';
 import { ProfileService } from '../../../core/services/profile.service';
+import { StreamingService } from '../../../core/services/streaming.service';
 import { WatchlistService } from '../../../core/services/watchlist.service';
 import { Icon, IconName } from '../../../shared/components/icon/icon';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
@@ -52,21 +54,54 @@ interface Stat {
       }
     </section>
 
-    <!-- Continue watching (empty state until streaming ships) -->
-    <section class="mt-10">
+    <!-- Continue watching -->
+    <section class="mt-10" aria-labelledby="continue-heading">
       <div class="mb-5 flex items-center gap-3">
         <span class="grid size-9 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20">
           <app-icon name="history" class="size-[1.1rem]" />
         </span>
-        <h2 class="section-title">Continue watching</h2>
+        <h2 id="continue-heading" class="section-title flex-1">Continue watching</h2>
+        @if (continueWatching().data?.length) {
+          <a routerLink="/account/history" class="text-sm font-semibold text-muted hover:text-foreground">History</a>
+        }
       </div>
-      <div class="card flex flex-col items-center px-6 py-12 text-center">
-        <span class="grid size-14 place-items-center rounded-2xl bg-white/5 text-muted ring-1 ring-border">
-          <app-icon name="play" class="size-6" />
-        </span>
-        <p class="mt-4 font-display font-semibold">Nothing in progress yet</p>
-        <p class="mt-1 max-w-sm text-sm text-muted">Titles you start watching will show up here so you can jump right back in.</p>
-      </div>
+      @if (continueWatching().loading) {
+        <div class="flex gap-4 overflow-hidden">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton aspect-video w-72 shrink-0 rounded-card"></div>
+          }
+        </div>
+      } @else if (continueWatching().data?.length) {
+        <ul class="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-3">
+          @for (w of continueWatching().data; track w.tmdbId) {
+            <li class="w-64 shrink-0 snap-start sm:w-72">
+              <a [routerLink]="['/watch', w.tmdbId]" class="card card-hover group block overflow-hidden" [attr.aria-label]="'Resume ' + w.title">
+                <div class="relative aspect-video bg-surface-raised">
+                  @if (w.backdropUrl || w.posterUrl) {
+                    <img [src]="w.backdropUrl ?? w.posterUrl" alt="" class="h-full w-full object-cover" loading="lazy" />
+                  }
+                  <div class="absolute inset-0 bg-linear-to-t from-black/70 to-transparent"></div>
+                  <span class="absolute inset-0 m-auto grid size-12 place-items-center rounded-full bg-primary/90 text-white opacity-0 shadow-glow transition group-hover:opacity-100"><app-icon name="play" filled class="ml-0.5 size-5" /></span>
+                  <div class="absolute inset-x-0 bottom-0 h-1 bg-white/20"><div class="h-full bg-primary" [style.width.%]="w.percent"></div></div>
+                </div>
+                <div class="p-3">
+                  <p class="truncate font-semibold">{{ w.title }}</p>
+                  <p class="text-xs text-muted">{{ remaining(w.duration - w.position) }} left</p>
+                </div>
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="card flex flex-col items-center px-6 py-12 text-center">
+          <span class="grid size-14 place-items-center rounded-2xl bg-white/5 text-muted ring-1 ring-border">
+            <app-icon name="play" class="size-6" />
+          </span>
+          <p class="mt-4 font-display font-semibold">Nothing in progress yet</p>
+          <p class="mt-1 max-w-sm text-sm text-muted">Titles you start watching will show up here so you can jump right back in.</p>
+          <a routerLink="/plans" class="btn btn-secondary btn-sm mt-5"><app-icon name="crown" class="size-4" /> See plans</a>
+        </div>
+      }
     </section>
 
     <app-media-carousel
@@ -103,12 +138,23 @@ export class DashboardPage {
     { initialValue: null },
   );
 
-  /** Watchlist count is live (updates as titles are added/removed); the library comes in a later phase. */
+  /** Watchlist count is live (updates as titles are added/removed). */
   protected readonly counts = computed<Partial<Record<string, number>>>(() => ({
     Watchlist: this.watchlist.count(),
+    Library: this.stats$()?.libraryCount ?? 0,
     Reviews: this.stats$()?.reviewCount ?? 0,
     'Upcoming bookings': this.stats$()?.upcomingBookingCount ?? 0,
   }));
+
+  protected readonly continueWatching = toSignal(inject(StreamingService).continueWatching().pipe(toLoadState()), {
+    initialValue: LOADING as LoadState<WatchedMovie[]>,
+  });
+
+  /** "1 h 12 min" / "8 min" */
+  protected remaining(seconds: number): string {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    return minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
+  }
 
   protected readonly recommended = toSignal(
     inject(CatalogService)
