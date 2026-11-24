@@ -2,12 +2,20 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, computed, effect, inject, input, numberAttribute, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { combineLatest, switchMap } from 'rxjs';
+import { catchError, combineLatest, of, switchMap } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/auth/auth.service';
+import { errorMessage } from '../../../core/http/api-error.util';
 import { LOADING, LoadState, toLoadState } from '../../../core/http/load-state';
 import { MovieDetails } from '../../../core/models/catalog';
+import { MovieAccess } from '../../../core/models/streaming';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { StoreService } from '../../../core/services/store.service';
+import { StreamingService } from '../../../core/services/streaming.service';
+import { ToastService } from '../../../core/ui/toast.service';
+import { clock, timeLeft } from '../../streaming/streaming-format';
 import { ErrorState } from '../../../shared/components/error-state/error-state';
 import { Icon } from '../../../shared/components/icon/icon';
 import { MediaCarousel } from '../../../shared/components/media-carousel/media-carousel';
@@ -26,11 +34,16 @@ const languageNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
 @Component({
   selector: 'app-movie-details-page',
-  imports: [TitleHero, MovieShowtimes, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
+  imports: [RouterLink, TitleHero, MovieShowtimes, CastRow, ReviewsSection, WatchlistButton, InfoList, MediaCarousel, TrailerModal, ErrorState, DetailsSkeleton, CurrencyPipe, Icon],
   templateUrl: './movie-details-page.html',
 })
 export class MovieDetailsPage {
   private readonly catalog = inject(CatalogService);
+  private readonly auth = inject(AuthService);
+  private readonly streaming = inject(StreamingService);
+  private readonly store = inject(StoreService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   /** Route param :id (TMDB id). */
   readonly id = input.required({ transform: numberAttribute });
@@ -47,6 +60,26 @@ export class MovieDetailsPage {
     ),
     { initialValue: LOADING as LoadState<MovieDetails> },
   );
+
+  /** What the logged-in user can do with this movie (null: logged out, not streamable, or loading). */
+  protected readonly access = toSignal(
+    combineLatest([toObservable(this.state), toObservable(this.attempt)]).pipe(
+      switchMap(([state]) => {
+        const movie = state.data;
+        if (!movie?.offer.streamable || !this.auth.isAuthenticated()) return of(null);
+        return this.streaming.access(movie.id).pipe(catchError(() => of(null)));
+      }),
+    ),
+    { initialValue: null as MovieAccess | null },
+  );
+  /** "Rent" or "Buy" while its order is being created. */
+  protected readonly ordering = signal<'RENTAL' | 'PURCHASE' | null>(null);
+
+  protected readonly rentalLeft = computed(() => timeLeft(this.access()?.rentalEndsAt ?? null, Date.now()));
+  protected readonly resumeLabel = computed(() => {
+    const access = this.access();
+    return access && access.resumeAt > 0 ? `Resume from ${clock(access.resumeAt)}` : 'Watch now';
+  });
 
   protected readonly facts = computed<HeroFact[]>(() => {
     const movie = this.state().data;
@@ -81,6 +114,26 @@ export class MovieDetailsPage {
 
   protected retry(): void {
     this.attempt.update((n) => n + 1);
+  }
+
+  /** Starts a rental or purchase, then goes to its checkout. */
+  protected order(kind: 'RENTAL' | 'PURCHASE', tmdbId: number): void {
+    if (!this.auth.isAuthenticated()) {
+      void this.router.navigate(['/login'], { queryParams: { returnUrl: `/movies/${tmdbId}` } });
+      return;
+    }
+    this.ordering.set(kind);
+    this.store.orderMovie(kind, tmdbId).subscribe({
+      next: (order) => void this.router.navigate(['/pay', order.id]),
+      error: (e: unknown) => {
+        this.ordering.set(null);
+        this.toast.error(errorMessage(e));
+      },
+    });
+  }
+
+  protected scrollToWatchOptions(): void {
+    document.getElementById('watch-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   protected scrollToShowtimes(): void {

@@ -39,10 +39,16 @@ public final class CatalogDtos {
     public record Trailer(String key, String name, String watchUrl, String embedUrl) {
     }
 
-    /** What MovieHub offers for a movie. {@code inCatalog=false} means the title has not been imported. */
-    public record MovieOffer(boolean inCatalog, boolean streamable, BigDecimal purchasePrice, BigDecimal rentalPrice) {
+    /**
+     * What MovieHub offers for a movie. {@code inCatalog=false} means the title has not been imported.
+     *
+     * @param streamable      it can be watched on MovieHub (it has a video)
+     * @param inSubscription  subscribers watch it at no extra cost (otherwise: buy or rent only)
+     */
+    public record MovieOffer(boolean inCatalog, boolean streamable, boolean inSubscription, BigDecimal purchasePrice,
+            BigDecimal rentalPrice) {
 
-        public static final MovieOffer NONE = new MovieOffer(false, false, null, null);
+        public static final MovieOffer NONE = new MovieOffer(false, false, false, null, null);
     }
 
     public record SeriesOffer(boolean inCatalog, boolean streamable) {

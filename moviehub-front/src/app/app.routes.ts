@@ -72,6 +72,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/booking/checkout/checkout-page').then((m) => m.CheckoutPage),
       },
       {
+        path: 'plans',
+        title: 'Plans · MovieHub',
+        loadComponent: () => import('./features/streaming/plans/plans-page').then((m) => m.PlansPage),
+      },
+      {
+        path: 'pay/:id',
+        title: 'Checkout · MovieHub',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/streaming/checkout/order-checkout-page').then((m) => m.OrderCheckoutPage),
+      },
+      {
         path: 'login',
         title: 'Log in · MovieHub',
         canActivate: [guestGuard],
@@ -85,6 +97,13 @@ export const routes: Routes = [
           import('./features/auth/register/register-page').then((m) => m.RegisterPage),
       },
     ],
+  },
+  {
+    // Full-screen player, outside the layouts.
+    path: 'watch/:id',
+    title: 'Watch · MovieHub',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/streaming/player/player-page').then((m) => m.PlayerPage),
   },
   {
     path: 'account',
@@ -126,6 +145,27 @@ export const routes: Routes = [
         title: 'Ticket · MovieHub',
         loadComponent: () =>
           import('./features/user/bookings/booking-details-page').then((m) => m.BookingDetailsPage),
+      },
+      {
+        path: 'library',
+        title: 'My Library · MovieHub',
+        loadComponent: () => import('./features/user/library/library-page').then((m) => m.LibraryPage),
+      },
+      {
+        path: 'history',
+        title: 'Watch History · MovieHub',
+        loadComponent: () => import('./features/user/history/history-page').then((m) => m.HistoryPage),
+      },
+      {
+        path: 'subscription',
+        title: 'Subscription · MovieHub',
+        loadComponent: () =>
+          import('./features/user/subscription/subscription-page').then((m) => m.SubscriptionPage),
+      },
+      {
+        path: 'payments',
+        title: 'Payments · MovieHub',
+        loadComponent: () => import('./features/user/payments/payments-page').then((m) => m.PaymentsPage),
       },
       {
         path: 'settings',

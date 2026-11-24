@@ -46,7 +46,8 @@ class StripePaymentGatewayTest {
     private static String intent(String status) {
         return """
                 {"id":"pi_1","object":"payment_intent","status":"%s","amount":2450,"currency":"eur",
-                 "client_secret":"pi_1_secret_x","metadata":{"booking_id":"42","reference":"MH-ABC234"}}"""
+                 "client_secret":"pi_1_secret_x","payment_method":"pm_1",
+                 "metadata":{"kind":"booking","order_id":"42","reference":"MH-ABC234"}}"""
                 .formatted(status);
     }
 
@@ -57,7 +58,8 @@ class StripePaymentGatewayTest {
                 .andExpect(header("Authorization", "Bearer sk_test_123"))
                 .andExpect(header("Idempotency-Key", "moviehub-booking-MH-ABC234"))
                 .andExpect(content().formDataContains(java.util.Map.of("amount", "2450", "currency", "eur",
-                        "metadata[booking_id]", "42", "automatic_payment_methods[enabled]", "true")))
+                        "metadata[kind]", "booking", "metadata[order_id]", "42",
+                        "automatic_payment_methods[enabled]", "true")))
                 .andRespond(withSuccess(intent("requires_payment_method"), MediaType.APPLICATION_JSON));
 
         var payment = gateway.start(ORDER, null);
@@ -67,7 +69,8 @@ class StripePaymentGatewayTest {
         assertThat(payment.clientSecret()).isEqualTo("pi_1_secret_x");
         assertThat(payment.amount()).isEqualByComparingTo("24.50");
         assertThat(payment.currency()).isEqualTo("EUR");
-        assertThat(payment.bookingId()).isEqualTo(42L);
+        assertThat(payment.orderId()).isEqualTo(42L);
+        assertThat(payment.kind()).isEqualTo("booking");
         server.verify();
     }
 
@@ -91,6 +94,42 @@ class StripePaymentGatewayTest {
 
         assertThat(gateway.refund("pi_1")).isEqualTo("re_1");
         assertThatThrownBy(() -> gateway.refund("pi_1")).isInstanceOf(ExternalServiceException.class);
+    }
+
+    @Test
+    void savesTheCardOfASubscriptionAndChargesItLater() {
+        PaymentOrder first = new PaymentOrder(PaymentOrder.STORE, 7, "MO-ABC234", new BigDecimal("8.99"), "EUR",
+                "Standard", "cus_1", true);
+        server.expect(requestTo(API + "/v1/customers"))
+                .andExpect(header("Idempotency-Key", "moviehub-customer-5"))
+                .andExpect(content().formDataContains(java.util.Map.of("metadata[user_id]", "5")))
+                .andRespond(withSuccess("{\"id\":\"cus_1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(API + "/v1/payment_intents"))
+                .andExpect(header("Idempotency-Key", "moviehub-order-MO-ABC234"))
+                .andExpect(content().formDataContains(java.util.Map.of("customer", "cus_1",
+                        "setup_future_usage", "off_session", "metadata[kind]", "order", "metadata[order_id]", "7")))
+                .andRespond(withSuccess(intent("requires_payment_method"), MediaType.APPLICATION_JSON));
+        PaymentOrder renewal = new PaymentOrder(PaymentOrder.STORE, 8, "MO-XYZ789", new BigDecimal("8.99"), "EUR",
+                "Standard (renewal)", "cus_1", false);
+        server.expect(requestTo(API + "/v1/payment_intents"))
+                .andExpect(content().formDataContains(java.util.Map.of("customer", "cus_1", "payment_method", "pm_1",
+                        "off_session", "true", "confirm", "true")))
+                .andRespond(withSuccess(intent("succeeded"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(API + "/v1/payment_intents"))
+                .andRespond(withStatus(HttpStatus.PAYMENT_REQUIRED).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"card_error\",\"code\":\"card_declined\"}}"));
+
+        assertThat(gateway.customer(5, null)).isEqualTo("cus_1");
+        assertThat(gateway.customer(5, "cus_existing")).isEqualTo("cus_existing");
+        gateway.start(first, null);
+        var paid = gateway.chargeSaved(renewal, "pm_1");
+        assertThat(paid.state()).isEqualTo(State.SUCCEEDED);
+        assertThat(paid.paymentMethodId()).isEqualTo("pm_1");
+        // Declined: reported as a failed payment, not an error.
+        assertThat(gateway.chargeSaved(renewal, "pm_1").state()).isEqualTo(State.CANCELED);
+        // No saved card: nothing is sent.
+        assertThat(gateway.chargeSaved(renewal, null).state()).isEqualTo(State.CANCELED);
+        server.verify();
     }
 
     @Test

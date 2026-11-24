@@ -55,6 +55,8 @@ export interface UserStats {
   reviewCount: number;
   /** Confirmed cinema bookings of screenings that have not started. */
   upcomingBookingCount: number;
+  /** Movies bought, plus rentals still running. */
+  libraryCount: number;
 }
 
 export const MAX_REVIEW_LENGTH = 2000;

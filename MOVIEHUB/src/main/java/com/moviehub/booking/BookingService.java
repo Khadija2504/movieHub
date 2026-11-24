@@ -379,7 +379,7 @@ public class BookingService {
     private void markPaid(Booking booking, Payment payment, Instant now) {
         if (payment.amount() == null || payment.amount().compareTo(booking.getTotalAmount()) != 0
                 || !booking.getCurrency().equalsIgnoreCase(payment.currency())
-                || (payment.bookingId() != null && payment.bookingId() != booking.getId().longValue())) {
+                || !payment.belongsTo(PaymentOrder.BOOKING, booking.getId())) {
             log.error("Payment {} does not match booking {} ({} {})", payment.id(), booking.getReference(),
                     booking.getTotalAmount(), booking.getCurrency());
             throw new ConflictException("The payment does not match this booking");

@@ -13,7 +13,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** A movie imported into the MovieHub catalog, with its MovieHub-specific offer (streaming, prices). */
+/**
+ * A movie imported into the MovieHub catalog, with its MovieHub-specific offer (streaming, prices).
+ * Its video files are {@link VideoSource}s.
+ */
 @Entity
 @Table(name = "movies")
 @Getter
@@ -53,8 +56,13 @@ public class Movie extends BaseEntity {
     @Column(name = "rental_price", precision = 10, scale = 2)
     private BigDecimal rentalPrice;
 
-    @Column(name = "video_url", length = 500)
-    private String videoUrl;
+    /** false = buy or rent only, even for subscribers. */
+    @Column(name = "in_subscription", nullable = false)
+    private boolean inSubscription = true;
+
+    /** Licence / credit line shown in the player. */
+    @Column(name = "video_credit")
+    private String videoCredit;
 
     @Column(nullable = false)
     private boolean active = true;

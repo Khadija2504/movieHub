@@ -80,7 +80,20 @@ app:
   bookings:
     # Releases unpaid seat holds every 30 seconds.
     expiry-job: true
-  # Development only: create demo cinemas and fill the next 7 days with screenings of movies in theatres.
+  store:
+    # Ends unpaid checkouts and renews subscriptions.
+    jobs: true
+  streaming:
+    # Signs play URLs. Empty = derived from JWT_SECRET.
+    secret: ${STREAM_SECRET:}
+    # Play URLs work this long; the player asks for new ones after that.
+    url-ttl: 4h
+    # Videos referenced as local:<path> (e.g. local:bbb/master.m3u8).
+    videos-dir: ${VIDEOS_DIR:./storage/videos}
+    # Proxy used to read external HLS playlists. Defaults to the TMDB proxy.
+    proxy: ${STREAMING_PROXY:${TMDB_PROXY:}}
+  # Development only: create demo cinemas and fill the next 7 days with screenings of movies in theatres,
+  # and make a few free films (Blender open movies, public-domain classics) streamable.
   demo-data: ${DEMO_DATA:false}
   admin:
     email: ${ADMIN_EMAIL:admin@moviehub.dev}

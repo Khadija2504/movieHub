@@ -38,14 +38,16 @@ public class CatalogService {
     private final TmdbMapper mapper;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
+    private final VideoSourceRepository videoSourceRepository;
     private final Clock clock;
 
     public CatalogService(TmdbClient tmdb, TmdbMapper mapper, MovieRepository movieRepository,
-            SeriesRepository seriesRepository) {
+            SeriesRepository seriesRepository, VideoSourceRepository videoSourceRepository) {
         this.tmdb = tmdb;
         this.mapper = mapper;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
+        this.videoSourceRepository = videoSourceRepository;
         this.clock = Clock.systemUTC();
     }
 
@@ -120,7 +122,12 @@ public class CatalogService {
     public MovieDetails movie(int tmdbId) {
         MovieOffer offer = movieRepository.findByTmdbId(tmdbId)
                 .filter(Movie::isActive)
-                .map(m -> new MovieOffer(true, m.isStreamable(), m.getPurchasePrice(), m.getRentalPrice()))
+                .map(m -> {
+                    // Streamable only once a video is attached.
+                    boolean streamable = m.isStreamable() && videoSourceRepository.existsByMovieId(m.getId());
+                    return new MovieOffer(true, streamable, streamable && m.isInSubscription(),
+                            streamable ? m.getPurchasePrice() : null, streamable ? m.getRentalPrice() : null);
+                })
                 .orElse(MovieOffer.NONE);
         return mapper.toMovieDetails(tmdb.movie(tmdbId), offer);
     }

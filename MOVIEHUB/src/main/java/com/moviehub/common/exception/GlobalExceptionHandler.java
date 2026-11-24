@@ -71,6 +71,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Malformed request body", req);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    ResponseEntity<ApiError> handleForbidden(ForbiddenException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), req);
+    }
+
     @ExceptionHandler(ConflictException.class)
     ResponseEntity<ApiError> handleConflict(ConflictException ex, HttpServletRequest req) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), req);

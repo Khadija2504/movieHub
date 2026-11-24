@@ -1,0 +1,149 @@
+<div class="container-page page-top pb-16">
+  @switch (phase()) {
+    @case ('loading') {
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div class="skeleton h-96 rounded-[1.5rem]"></div>
+        <div class="skeleton h-96 rounded-[1.5rem]"></div>
+      </div>
+    }
+    @case ('error') {
+      <app-error-state [message]="error() ?? 'Something went wrong.'" (retry)="retry()" />
+    }
+    @case ('ended') {
+      <div class="card mx-auto flex max-w-lg flex-col items-center px-6 py-14 text-center">
+        <span class="grid size-16 place-items-center rounded-2xl bg-warning/12 text-warning ring-1 ring-warning/25"><app-icon name="clock" class="size-7" /></span>
+        @if (order()?.status === 'CANCELLED') {
+          <h1 class="mt-5 font-display text-2xl font-bold">This checkout was cancelled</h1>
+        } @else {
+          <h1 class="mt-5 font-display text-2xl font-bold">This checkout has expired</h1>
+        }
+        <p class="mt-2 text-muted">You have not been charged. You can start again whenever you like.</p>
+        <a [routerLink]="backLink()" class="btn btn-primary mt-8">{{ order()?.movie ? 'Back to the movie' : 'See the plans' }}</a>
+      </div>
+    }
+    @default {
+      @let o = order()!;
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <section class="card min-w-0 p-5 sm:p-8" aria-labelledby="pay-heading">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 id="pay-heading" class="text-2xl font-extrabold sm:text-3xl">Payment</h1>
+              <p class="mt-1 text-sm text-muted">Order <span class="font-mono font-semibold text-foreground">{{ o.reference }}</span></p>
+            </div>
+            @if (phase() === 'ready' || phase() === 'paying') {
+              <div
+                class="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1 transition-colors"
+                [class]="hurry() ? 'bg-danger/12 text-danger ring-danger/25' : 'bg-white/5 text-foreground ring-border'"
+                role="timer"
+                [attr.aria-label]="'Checkout open for ' + timeLeft()"
+              >
+                <app-icon name="clock" class="size-4" /> <span class="w-12 font-mono tabular-nums">{{ timeLeft() }}</span>
+              </div>
+            }
+          </div>
+
+          @if (phase() === 'processing') {
+            <div class="mt-10 flex flex-col items-center py-10 text-center">
+              <span class="size-12 animate-spin rounded-full border-4 border-white/10 border-t-primary" aria-hidden="true"></span>
+              <p class="mt-6 font-display text-lg font-semibold">Your payment is being processed</p>
+              <p class="mt-1 max-w-sm text-sm text-muted">This can take a moment. It will appear in your account as soon as the payment is approved.</p>
+              <a routerLink="/account/payments" class="btn btn-secondary mt-6">Go to Payments</a>
+            </div>
+          } @else {
+            @if (session()?.provider === 'DEMO') {
+              <div class="mt-8 flex gap-3 rounded-2xl bg-sky-500/10 p-4 text-sm text-sky-200 ring-1 ring-sky-500/20">
+                <app-icon name="info" class="mt-0.5 size-5 shrink-0" />
+                <p><strong class="font-semibold">Demo payment.</strong> Online payments are not configured on this server, so no card is charged. Press Pay to continue.</p>
+              </div>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2" aria-hidden="true">
+                <div class="sm:col-span-2">
+                  <span class="label">Card number</span>
+                  <div class="input flex items-center justify-between text-muted"><span class="font-mono">4242 4242 4242 4242</span><app-icon name="card" class="size-5" /></div>
+                </div>
+                <div><span class="label">Expiry</span><div class="input flex items-center font-mono text-muted">12 / 34</div></div>
+                <div><span class="label">CVC</span><div class="input flex items-center font-mono text-muted">123</div></div>
+              </div>
+            } @else if (session()?.provider === 'STRIPE') {
+              <div class="mt-8">
+                @if (!stripeReady()) {
+                  <div class="space-y-3" aria-hidden="true">
+                    <div class="skeleton h-12 rounded-xl"></div>
+                    <div class="grid grid-cols-2 gap-3"><div class="skeleton h-12 rounded-xl"></div><div class="skeleton h-12 rounded-xl"></div></div>
+                  </div>
+                }
+                <div #stripeHost></div>
+              </div>
+              <p class="mt-4 flex items-center gap-1.5 text-xs text-subtle"><app-icon name="lock" class="size-3.5" /> Payments are processed securely by Stripe. MovieHub never sees your card number.</p>
+            }
+
+            @if (o.kind === 'SUBSCRIPTION') {
+              <p class="mt-5 text-xs text-muted">Your card is saved with the payment provider to renew the subscription every {{ o.plan?.periodDays }} days. Turn auto-renew off anytime from your account.</p>
+            }
+
+            @if (paymentError(); as message) {
+              <p class="mt-6 flex items-start gap-2 rounded-xl bg-danger/10 p-3 text-sm text-danger ring-1 ring-danger/25" role="alert">
+                <app-icon name="alert" class="mt-0.5 size-4 shrink-0" /> {{ message }}
+              </p>
+            }
+
+            <button
+              type="button"
+              class="btn btn-primary btn-lg mt-8 w-full"
+              [disabled]="phase() !== 'ready' || (session()?.provider === 'STRIPE' && !stripeReady())"
+              (click)="pay()"
+            >
+              @if (phase() === 'paying') {
+                <span class="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span> Processing…
+              } @else {
+                <app-icon name="lock" class="size-5" /> Pay {{ o.amount | currency: o.currency }}
+              }
+            </button>
+            <button type="button" class="btn btn-ghost mt-3 w-full text-muted" [disabled]="cancelling() || phase() === 'paying'" (click)="cancel()">
+              Cancel
+            </button>
+          }
+        </section>
+
+        <aside class="card overflow-hidden lg:sticky lg:top-24" aria-label="Order summary">
+          @if (o.movie; as movie) {
+            <div class="relative h-36 bg-surface-raised">
+              @if (movie.backdropUrl) {
+                <img [src]="movie.backdropUrl" alt="" class="h-full w-full object-cover opacity-70" />
+              }
+              <div class="absolute inset-0 bg-linear-to-t from-surface to-transparent"></div>
+              <span class="badge absolute top-4 left-4 glass text-white">{{ o.kind === 'RENTAL' ? '48-hour rental' : 'Purchase' }}</span>
+            </div>
+            <div class="flex gap-4 px-5 pb-5 sm:px-6">
+              @if (movie.posterUrl) {
+                <img [src]="movie.posterUrl" alt="" class="-mt-10 aspect-2/3 w-20 shrink-0 rounded-xl object-cover shadow-xl ring-1 ring-white/15" />
+              }
+              <div class="min-w-0 pt-2">
+                <h2 class="font-display text-lg leading-snug font-bold">{{ movie.title }}</h2>
+                @if (movie.year) {
+                  <p class="text-sm text-muted">{{ movie.year }}</p>
+                }
+              </div>
+            </div>
+          } @else if (o.plan; as plan) {
+            <div class="border-b border-border bg-linear-to-br from-primary/20 to-transparent p-5 sm:p-6">
+              <span class="badge bg-primary/15 text-primary ring-1 ring-primary/25"><app-icon name="crown" class="size-3.5" /> Subscription</span>
+              <h2 class="mt-3 font-display text-2xl font-bold">MovieHub {{ plan.name }}</h2>
+              <p class="mt-1 text-sm text-muted">{{ plan.description }}</p>
+            </div>
+          }
+          <div class="px-5 pb-6 sm:px-6" [class.pt-5]="!o.movie">
+            <ul class="space-y-2.5 text-sm">
+              @for (perk of perks(); track perk) {
+                <li class="flex gap-2.5"><app-icon name="check" class="mt-0.5 size-4 shrink-0 text-success" /> {{ perk }}</li>
+              }
+            </ul>
+            <div class="mt-5 flex items-baseline justify-between border-t border-border pt-4">
+              <span class="text-sm text-muted">Total</span>
+              <span class="font-display text-2xl font-bold">{{ o.amount | currency: o.currency }}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    }
+  }
+</div>
