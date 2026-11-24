@@ -46,7 +46,10 @@ export interface Trailer {
 
 export interface MovieOffer {
   inCatalog: boolean;
+  /** It can be watched on MovieHub (it has a video). */
   streamable: boolean;
+  /** Subscribers watch it at no extra cost (otherwise: rent or buy only). */
+  inSubscription: boolean;
   purchasePrice: number | null;
   rentalPrice: number | null;
 }
