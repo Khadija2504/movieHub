@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.moviehub.booking.BookingRepository;
 import com.moviehub.common.exception.BadRequestException;
 import com.moviehub.common.exception.ResourceNotFoundException;
+import com.moviehub.library.LibraryRepository;
 import com.moviehub.review.ReviewRepository;
 import com.moviehub.storage.AvatarStorage;
 import com.moviehub.user.dto.ProfileDtos.UpdateProfileRequest;
@@ -33,6 +34,7 @@ public class ProfileService {
     private final WatchlistRepository watchlistRepository;
     private final ReviewRepository reviewRepository;
     private final BookingRepository bookingRepository;
+    private final LibraryRepository libraryRepository;
 
     @Transactional(readOnly = true)
     public UserResponse get(long userId) {
@@ -68,8 +70,9 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public UserStats stats(long userId) {
+        Instant now = Instant.now();
         return new UserStats(watchlistRepository.countByUserId(userId), reviewRepository.countByUserId(userId),
-                bookingRepository.countUpcomingConfirmed(userId, Instant.now()));
+                bookingRepository.countUpcomingConfirmed(userId, now), libraryRepository.countAccessible(userId, now));
     }
 
     /** Permanently deletes the account; watchlist, reviews and sessions go with it (ON DELETE CASCADE). */

@@ -1,0 +1,10 @@
+package com.moviehub.subscription;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, Long> {
+
+    List<SubscriptionPlan> findByActiveTrueOrderBySortOrderAsc();
+}

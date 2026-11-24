@@ -60,7 +60,10 @@ public class SecurityConfig {
             "/api/files/**",
             "/api/cinemas/**",
             "/api/cinemas",
-            "/api/screenings/**"
+            "/api/screenings/**",
+            "/api/subscriptions/plans",
+            // Video files: the signed token in the URL is the authorisation.
+            "/api/stream/play/**"
     };
 
     @Bean

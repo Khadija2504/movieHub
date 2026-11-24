@@ -47,6 +47,10 @@ public class User extends BaseEntity {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    /** Payment provider customer (Stripe cus_...) holding the saved card used for subscription renewals. */
+    @Column(name = "payment_customer_id", length = 100)
+    private String paymentCustomerId;
+
     public User(String email, String passwordHash, String firstName, String lastName, Role role) {
         this.email = normalizeEmail(email);
         this.passwordHash = passwordHash;

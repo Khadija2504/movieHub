@@ -21,13 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.moviehub.booking.BookingService;
+import com.moviehub.store.StoreService;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Stripe webhook (https://docs.stripe.com/webhooks): confirms bookings whose payment succeeded even when the
- * customer closed the checkout page. Disabled unless STRIPE_WEBHOOK_SECRET is set. Public, but every call
+ * Stripe webhook (https://docs.stripe.com/webhooks): confirms bookings and store orders whose payment succeeded
+ * even when the customer closed the checkout page. Disabled unless STRIPE_WEBHOOK_SECRET is set. Public, but every call
  * must carry a valid Stripe signature.
  */
 @Hidden
@@ -40,12 +41,15 @@ public class StripeWebhookController {
 
     private final PaymentProperties props;
     private final BookingService bookingService;
+    private final StoreService storeService;
     private final ObjectMapper objectMapper;
     private final Clock clock = Clock.systemUTC();
 
-    public StripeWebhookController(PaymentProperties props, BookingService bookingService, ObjectMapper objectMapper) {
+    public StripeWebhookController(PaymentProperties props, BookingService bookingService, StoreService storeService,
+            ObjectMapper objectMapper) {
         this.props = props;
         this.bookingService = bookingService;
+        this.storeService = storeService;
         this.objectMapper = objectMapper;
     }
 
@@ -63,7 +67,13 @@ public class StripeWebhookController {
         Event event = objectMapper.readValue(payload, Event.class);
         if ("payment_intent.succeeded".equals(event.type()) && event.data() != null
                 && event.data().object() != null) {
-            bookingService.onPaymentSucceeded(event.data().object().id());
+            StripeObject intent = event.data().object();
+            String kind = intent.metadata() == null ? null : intent.metadata().get("kind");
+            if (PaymentGateway.PaymentOrder.STORE.equals(kind)) {
+                storeService.onPaymentSucceeded(intent.id());
+            } else {
+                bookingService.onPaymentSucceeded(intent.id());
+            }
         }
         return ResponseEntity.ok().build();
     }
@@ -118,6 +128,6 @@ public class StripeWebhookController {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record StripeObject(String id) {
+    record StripeObject(String id, java.util.Map<String, String> metadata) {
     }
 }
