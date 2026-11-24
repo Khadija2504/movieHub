@@ -81,10 +81,16 @@ public class StripePaymentGateway implements PaymentGateway {
         form.add("currency", order.currency().toLowerCase(Locale.ROOT));
         form.add("automatic_payment_methods[enabled]", "true");
         form.add("description", order.description());
-        form.add("metadata[booking_id]", Long.toString(order.bookingId()));
-        form.add("metadata[reference]", order.reference());
-        // Same booking => same intent, even if the request is retried.
-        String idempotencyKey = "moviehub-booking-" + order.reference()
+        addMetadata(form, order);
+        if (order.customerId() != null) {
+            form.add("customer", order.customerId());
+        }
+        if (order.saveCard()) {
+            // Keeps the card on the customer, for renewals charged without them.
+            form.add("setup_future_usage", "off_session");
+        }
+        // Same order => same intent, even if the request is retried.
+        String idempotencyKey = "moviehub-" + order.kind() + "-" + order.reference()
                 + (existingPaymentId != null ? "-" + existingPaymentId : "");
         return toPayment(call(() -> client.post().uri("/v1/payment_intents")
                 .header("Idempotency-Key", idempotencyKey)
@@ -123,6 +129,62 @@ public class StripePaymentGateway implements PaymentGateway {
         return refund.id();
     }
 
+    @Override
+    public String customer(long userId, String existingCustomerId) {
+        if (existingCustomerId != null) {
+            return existingCustomerId;
+        }
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("metadata[user_id]", Long.toString(userId));
+        Customer customer = call(() -> client.post().uri("/v1/customers")
+                .header("Idempotency-Key", "moviehub-customer-" + userId)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(form)
+                .retrieve().body(Customer.class));
+        return customer.id();
+    }
+
+    @Override
+    public Payment chargeSaved(PaymentOrder order, String paymentMethodId) {
+        if (order.customerId() == null || paymentMethodId == null) {
+            return declined(order);
+        }
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("amount", Long.toString(toMinor(order.amount())));
+        form.add("currency", order.currency().toLowerCase(Locale.ROOT));
+        form.add("customer", order.customerId());
+        form.add("payment_method", paymentMethodId);
+        form.add("off_session", "true");
+        form.add("confirm", "true");
+        form.add("description", order.description());
+        addMetadata(form, order);
+        try {
+            return toPayment(call(() -> client.post().uri("/v1/payment_intents")
+                    .header("Idempotency-Key", "moviehub-" + order.kind() + "-" + order.reference())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve().body(Intent.class)));
+        } catch (ExternalServiceException e) {
+            if (e.getCause() instanceof RestClientResponseException response
+                    && response.getStatusCode().value() == 402) {
+                // Card declined or authentication required: the renewal failed.
+                return declined(order);
+            }
+            throw e;
+        }
+    }
+
+    private static Payment declined(PaymentOrder order) {
+        return new Payment(null, State.CANCELED, order.amount(), order.currency(), null, order.kind(),
+                order.orderId(), null);
+    }
+
+    private static void addMetadata(MultiValueMap<String, String> form, PaymentOrder order) {
+        form.add("metadata[kind]", order.kind());
+        form.add("metadata[order_id]", Long.toString(order.orderId()));
+        form.add("metadata[reference]", order.reference());
+    }
+
     /** Parses a PaymentIntent object (also used for webhook events). */
     Payment toPayment(Intent intent) {
         State state = switch (intent.status()) {
@@ -131,10 +193,11 @@ public class StripePaymentGateway implements PaymentGateway {
             case "canceled" -> State.CANCELED;
             default -> State.OPEN; // requires_payment_method, requires_confirmation, requires_action, ...
         };
-        String bookingId = intent.metadata() == null ? null : intent.metadata().get("booking_id");
+        Map<String, String> metadata = intent.metadata() == null ? Map.of() : intent.metadata();
+        String orderId = metadata.getOrDefault("order_id", metadata.get("booking_id"));
         return new Payment(intent.id(), state, BigDecimal.valueOf(intent.amount(), 2),
                 intent.currency() == null ? null : intent.currency().toUpperCase(Locale.ROOT), intent.clientSecret(),
-                bookingId == null ? null : Long.valueOf(bookingId));
+                metadata.get("kind"), orderId == null ? null : Long.valueOf(orderId), intent.paymentMethod());
     }
 
     static long toMinor(BigDecimal amount) {
@@ -161,7 +224,12 @@ public class StripePaymentGateway implements PaymentGateway {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Intent(String id, String status, long amount, String currency,
-            @JsonProperty("client_secret") String clientSecret, Map<String, String> metadata) {
+            @JsonProperty("client_secret") String clientSecret, Map<String, String> metadata,
+            @JsonProperty("payment_method") String paymentMethod) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Customer(String id) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
