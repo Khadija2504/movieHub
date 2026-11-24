@@ -129,9 +129,28 @@ class CatalogApiIntegrationTest {
                                 """))
                 .andExpect(status().isOk());
 
+        // No video yet: not streamable, so nothing to buy.
+        mvc.perform(get("/api/movies/550"))
+                .andExpect(jsonPath("$.offer.inCatalog").value(true))
+                .andExpect(jsonPath("$.offer.streamable").value(false))
+                .andExpect(jsonPath("$.offer.purchasePrice").doesNotExist());
+
+        mvc.perform(put("/api/admin/catalog/movies/" + localId + "/offer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"streamable":true,"purchasePrice":9.99,"rentalPrice":3.99,"inSubscription":false,
+                                 "videoSources":[{"url":"https://cdn.example.com/movie/master.m3u8"},
+                                                 {"url":"local:movie/720.mp4","quality":720}],
+                                 "videoCredit":"Test credit","active":true}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.videoSources.length()").value(2))
+                .andExpect(jsonPath("$.videoCredit").value("Test credit"));
+
         mvc.perform(get("/api/movies/550"))
                 .andExpect(jsonPath("$.offer.inCatalog").value(true))
                 .andExpect(jsonPath("$.offer.streamable").value(true))
+                .andExpect(jsonPath("$.offer.inSubscription").value(false))
                 .andExpect(jsonPath("$.offer.purchasePrice").value(9.99))
                 .andExpect(jsonPath("$.offer.rentalPrice").value(3.99));
     }
@@ -149,5 +168,16 @@ class CatalogApiIntegrationTest {
                         .content("{\"streamable\":false,\"purchasePrice\":-1,\"active\":true}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.purchasePrice").exists());
+
+        // Videos must be MP4 (with a height) or HLS, over https or local, without leaving the videos folder.
+        for (String video : new String[] {"{\"url\":\"ftp://x.org/a.mp4\",\"quality\":480}",
+                "{\"url\":\"https://x.org/a.mp4\"}", "{\"url\":\"https://x.org/a.m3u8\",\"quality\":720}",
+                "{\"url\":\"local:../etc/passwd.mp4\",\"quality\":480}",
+                "{\"url\":\"https://x.org/a.avi\",\"quality\":480}"}) {
+            mvc.perform(put("/api/admin/catalog/movies/" + localId + "/offer")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"streamable\":true,\"active\":true,\"videoSources\":[" + video + "]}"))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }
